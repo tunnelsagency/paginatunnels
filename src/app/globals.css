@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 45 22% 92%;
+    --foreground: 218 22% 20%;
+    --card: 45 16% 94%;
+    --card-foreground: 218 22% 20%;
+    --popover: 45 16% 94%;
+    --popover-foreground: 218 22% 20%;
+    --primary: 208 94% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 18% 84%;
+    --secondary-foreground: 218 26% 24%;
+    --muted: 45 16% 80%;
+    --muted-foreground: 218 20% 32%;
+    --accent: 202 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 68% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 45 18% 74%;
+    --input: 45 18% 74%;
+    --ring: 208 94% 52%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 42% 6%;
+    --foreground: 210 35% 96%;
+    --card: 220 32% 12%;
+    --card-foreground: 210 35% 96%;
+    --popover: 220 32% 12%;
+    --popover-foreground: 210 35% 96%;
+    --primary: 204 92% 55%;
+    --primary-foreground: 222 42% 8%;
+    --secondary: 222 28% 18%;
+    --secondary-foreground: 210 33% 94%;
+    --muted: 222 25% 22%;
+    --muted-foreground: 210 20% 72%;
+    --accent: 200 100% 68%;
+    --accent-foreground: 222 40% 8%;
+    --destructive: 0 68% 50%;
+    --destructive-foreground: 210 35% 96%;
+    --border: 222 26% 26%;
+    --input: 222 26% 26%;
+    --ring: 204 92% 55%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans), ui-sans-serif, system-ui;
+    line-height: 1.65;
+    background-color: hsl(var(--background));
+  }
+}
+
+@layer utilities {
+  .bg-grid-light {
+    background-image:
+      linear-gradient(rgba(32, 44, 60, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(32, 44, 60, 0.04) 1px, transparent 1px),
+      radial-gradient(circle at center, rgba(90, 138, 198, 0.1), transparent 55%),
+      linear-gradient(180deg, rgba(241, 240, 235, 0.9), rgba(215, 220, 226, 0.45));
+    background-size: 36px 36px, 36px 36px, 100% 100%, 100% 100%;
+    background-position: -18px -18px, -18px -18px, 0 0, 0 0;
+  }
+
+  .bg-grid-dark {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      radial-gradient(circle at center, rgba(40, 120, 250, 0.16), transparent 55%),
+      linear-gradient(180deg, rgba(10, 16, 28, 0.88), rgba(5, 8, 15, 1));
+    background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%;
+    background-position: -24px -24px, -24px -24px, 0 0, 0 0;
+  }
+
+  .floating-particles::before,
+  .floating-particles::after {
+    background: radial-gradient(circle, rgba(70, 120, 180, 0.08) 0%, transparent 50%);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-4%, -3%, 0) scale(0.97);
+    opacity: 0.6;
+  }
+}

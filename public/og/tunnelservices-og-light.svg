@@ -1,0 +1,45 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgLight" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F7F9FC" />
+      <stop offset="45%" stop-color="#EAF0F9" />
+      <stop offset="100%" stop-color="#F7F9FC" />
+    </linearGradient>
+    <linearGradient id="signatureLight" x1="160" y1="140" x2="1040" y2="490" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4C3FFF" />
+      <stop offset="50%" stop-color="#00B89C" />
+      <stop offset="100%" stop-color="#4C3FFF" />
+    </linearGradient>
+    <radialGradient id="haloLightLeft" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 315) rotate(0) scale(420 320)">
+      <stop stop-color="#4C3FFF" stop-opacity="0.45" />
+      <stop offset="1" stop-color="#F7F9FC" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="haloLightRight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 315) rotate(0) scale(420 320)">
+      <stop stop-color="#00B89C" stop-opacity="0.45" />
+      <stop offset="1" stop-color="#F7F9FC" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" rx="32" fill="url(#bgLight)" />
+  <rect width="1200" height="630" rx="32" fill="url(#haloLightLeft)" />
+  <rect width="1200" height="630" rx="32" fill="url(#haloLightRight)" />
+  <g opacity="0.4">
+    <path d="M1080 100C960 200 880 240 740 240C600 240 540 140 410 140C280 140 160 220 120 270" stroke="url(#signatureLight)" stroke-width="4" stroke-linecap="round" stroke-dasharray="16 24" />
+    <path d="M1080 440C960 340 880 300 740 300C600 300 540 400 410 400C280 400 160 320 120 270" stroke="url(#signatureLight)" stroke-width="4" stroke-linecap="round" stroke-dasharray="16 24" />
+  </g>
+  <g fill="#0A0D14">
+    <text x="160" y="226" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="68" font-weight="800" letter-spacing="-0.02em">TunnelServices</text>
+    <text x="160" y="292" font-family="'Inter', 'Segoe UI', sans-serif" font-size="30" font-weight="500" fill="#344159">Agencia de IA y Soluciones</text>
+  </g>
+  <text x="160" y="368" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="48" font-weight="700" fill="#0A0D14" letter-spacing="-0.015em">El túnel más corto hacia resultados con IA.</text>
+  <text x="160" y="428" font-family="'Inter', 'Segoe UI', sans-serif" font-size="26" font-weight="400" fill="#344159">Bots, automatizaciones e integraciones que convierten procesos en crecimiento medible.</text>
+  <g transform="translate(160,470)">
+    <rect width="320" height="72" rx="36" fill="url(#signatureLight)" />
+    <text x="36" y="46" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="26" font-weight="600" fill="#F7F9FC">Cruzar el túnel ahora</text>
+  </g>
+  <g transform="translate(900,120)">
+    <path d="M120 40C120 17.9086 102.091 0 80 0H40C17.9086 0 0 17.9086 0 40V160" stroke="url(#signatureLight)" stroke-width="3" stroke-linecap="round" stroke-dasharray="12 18" opacity="0.6" />
+    <circle cx="20" cy="180" r="8" fill="#4C3FFF" />
+    <circle cx="60" cy="180" r="8" fill="#00B89C" />
+    <circle cx="100" cy="180" r="8" fill="#FFBD59" />
+  </g>
+</svg>

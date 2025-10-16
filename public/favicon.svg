@@ -1,0 +1,22 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#6A5BFF" stop-opacity="0.8" />
+      <stop offset="60%" stop-color="#00D1B2" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#0B0F1A" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6A5BFF" />
+      <stop offset="55%" stop-color="#00D1B2" />
+      <stop offset="100%" stop-color="#6A5BFF" />
+    </linearGradient>
+    <mask id="tunnel-mask">
+      <rect width="64" height="64" fill="white" rx="16" />
+      <path d="M14 22H32V28H24V46H16V28H14V22Z" fill="black" />
+      <path d="M34 22C34 18.6863 36.6863 16 40 16H48C51.3137 16 54 18.6863 54 22C54 25.3137 51.3137 28 48 28H42V30H48C51.3137 30 54 32.6863 54 36C54 39.3137 51.3137 42 48 42H40C36.6863 42 34 39.3137 34 36V34H42V36H48V34H42C38.6863 34 36 31.3137 36 28V22H48V24H42V22H34Z" fill="black" />
+    </mask>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#0B0F1A" />
+  <rect width="64" height="64" rx="16" fill="url(#halo)" />
+  <rect width="64" height="64" rx="16" fill="url(#glow)" mask="url(#tunnel-mask)" />
+</svg>
