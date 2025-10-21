@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, Loader2, Mail, TriangleAlert } from "lucide-react";
 
 import {
@@ -24,6 +24,7 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -34,7 +35,12 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = event.currentTarget;
+    const form = formRef.current ?? event.currentTarget;
+    if (!form) {
+      console.error("contact form element not found");
+      return;
+    }
+
     const formData = new FormData(form);
     const name = (formData.get("name") as string | null)?.trim() ?? "";
     const email = (formData.get("email") as string | null)?.trim() ?? "";
@@ -85,7 +91,7 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
             Share a few details and we&apos;ll reach out from tunnels.services@gmail.com to schedule your session.
           </DialogDescription>
         </DialogHeader>
-        <form className="mt-4 space-y-5 text-left" onSubmit={handleSubmit}>
+        <form ref={formRef} className="mt-4 space-y-5 text-left" onSubmit={handleSubmit}>
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" name="name" placeholder="Your name" />
