@@ -34,7 +34,8 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const name = (formData.get("name") as string | null)?.trim() ?? "";
     const email = (formData.get("email") as string | null)?.trim() ?? "";
     const company = (formData.get("company") as string | null)?.trim() ?? "";
@@ -57,7 +58,9 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
         throw new Error(error ?? "Unknown error");
       }
 
-      event.currentTarget.reset();
+      if (form) {
+        form.reset();
+      }
       setStatus("success");
       setTimeout(() => {
         setStatus("idle");
