@@ -114,12 +114,12 @@ function Navbar() {
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
         <Link href="#" className="flex items-center gap-3">
           <Image
-            src="/favicon.png"
+            src="/logo.png"
             alt="Tunnels Services logo"
             width={44}
             height={44}
             priority
-            className="h-11 w-11 rounded-lg border border-border/60 object-cover shadow-sm bg-transparent p-0.5 dark:bg-white"
+            className="h-11 w-11 rounded-lg bg-white p-1 object-contain"
           />
           <div className="text-sm font-semibold tracking-wide text-foreground/85">Tunnels Services</div>
         </Link>
