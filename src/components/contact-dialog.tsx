@@ -35,7 +35,7 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = formRef.current ?? event.currentTarget;
+    const form = formRef.current; // Use the ref, event.currentTarget can be nulled after awaits.
     if (!form) {
       console.error("contact form element not found");
       return;
