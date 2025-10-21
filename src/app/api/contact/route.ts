@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: FROM_ADDRESS,
       to: RECIPIENT,
-      reply_to: email,
+      replyTo: email,
       subject: `Demo request from ${name || "website visitor"}`,
       text: lines.join("\n"),
     });
