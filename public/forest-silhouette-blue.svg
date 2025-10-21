@@ -1,0 +1,23 @@
+<svg width="1440" height="360" viewBox="0 0 1440 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="blueForestGradient" x1="720" y1="0" x2="720" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E7F1FF" />
+      <stop offset="0.45" stop-color="#CFDFF4" />
+      <stop offset="1" stop-color="#B3CCE8" />
+    </linearGradient>
+    <linearGradient id="blueTreeShade" x1="720" y1="120" x2="720" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B5C86" stop-opacity="0.25" />
+      <stop offset="1" stop-color="#1F3654" stop-opacity="0.88" />
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="360" fill="url(#blueForestGradient)" />
+  <g fill="url(#blueTreeShade)">
+    <path d="M-40 360L20 260L0 260L60 170L40 170L110 60L180 190L150 190L210 290L180 290L240 360H-40Z" />
+    <path d="M160 360L210 280L190 280L250 200L230 200L300 90L360 220L340 220L400 300L370 300L430 360H160Z" />
+    <path d="M360 360L420 250L390 250L470 130L440 130L520 30L600 200L570 200L640 310L600 310L670 360H360Z" />
+    <path d="M620 360L690 240L660 240L740 120L710 120L800 10L880 210L850 210L920 320L880 320L950 360H620Z" />
+    <path d="M900 360L960 250L940 250L1000 150L980 150L1040 50L1100 200L1070 200L1130 300L1100 300L1150 360H900Z" />
+    <path d="M1140 360L1190 280L1170 280L1230 200L1210 200L1280 80L1350 210L1320 210L1380 300L1350 300L1400 360H1140Z" />
+    <path d="M1340 360L1400 260L1380 260L1440 160L1440 360H1340Z" />
+  </g>
+</svg>

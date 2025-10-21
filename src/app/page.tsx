@@ -1,108 +1,94 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { Check, FileText, MessageSquare, ShieldCheck, Sparkles, Timer } from "lucide-react";
 
+import { ContactDialog } from "@/components/contact-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 const navLinks = [
-  { label: "Benefits", href: "#benefits" },
-  { label: "How it works", href: "#how-it-works" },
+  { label: "Value", href: "#value" },
+  { label: "Approach", href: "#approach" },
   { label: "Plans", href: "#plans" },
-  { label: "FAQs", href: "#faqs" },
-  { label: "Contact", href: "#contact" },
 ];
 
-const heroHighlights = [
-  "Automatically captures name, phone, and email",
-  "Answers FAQs: hours, pricing, stock, location",
-  "Instant email alert every time a lead comes in",
+const valuePoints = [
+  "Convert web visitors into customers with instant, helpful responses.",
+  "Answer FAQs day and night - no extra team required.",
+  "Streamline operations and focus on closing more deals.",
 ];
 
-const valueBullets = [
-  "Chat widget on your landing to spark more conversations",
-  "Supported channel: Telegram (fast and easy)",
-  "Own database: every contact stored and exportable",
-];
-
-const howItWorks = [
+const approachPoints = [
   {
-    title: "Quick setup",
-    summary: "We launch your landing with chat and activate the Telegram bot.",
+    title: "Client-Centric Focus",
+    description:
+      "We begin with a deep understanding of your unique needs and vision, ensuring alignment at every step.",
   },
   {
-    title: "Load your FAQs",
-    summary: "We preload hours, pricing, stock, and location for clear answers.",
+    title: "Innovative Solutions",
+    description: "We stay ahead of the curve, using the latest tech to keep your business competitive.",
   },
   {
-    title: "Capture and notify",
-    summary: "You start collecting leads and get email alerts instantly.",
+    title: "Agile Methodology",
+    description: "We break projects into manageable phases so we can adapt quickly and optimize results.",
   },
   {
-    title: "Everything saved",
-    summary: "Every contact lives in your database and is exportable on demand.",
+    title: "Comprehensive Support",
+    description:
+      "We build long-term partnerships, providing ongoing support and maintenance for sustained success.",
   },
 ];
 
-const plans = [
-  {
-    name: "Telegram Starter",
-    summary: "Lead capture chatbot tuned for FAQs and quick replies.",
-    features: [
-      "Channels: Telegram bot + landing chat widget",
-      "Landing page included with this chatbot plan",
-      "FAQ responses (hours, pricing, stock, location)",
-      "Captures name, phone, and email",
-      "Email notification for every lead",
-      "Own database and exportable records",
-    ],
-    cta: "Start with Starter",
-  },
-  {
-    name: "Telegram Pro + Documents",
-    summary: "Everything in Starter plus document-aware answers via RAG.",
-    features: [
-      "Channels: Telegram bot + landing chat widget",
-      "Landing page included with this chatbot plan",
-      "Everything in Starter",
-      "RAG: the bot answers using your documents (PDF/Docs)",
-      "Source citations when needed",
-      "Simple document management: upload and update",
-    ],
-    cta: "See Pro with documents",
-  },
+const planColumns = ["Essential Chat", "Multichannel Engage", "Smart Insights"];
+
+const planMatrix = [
+  { feature: "Channel focus", values: ["Landing page bot", "Landing + preferred channel", "Landing + preferred channel"] },
+  { feature: "Embedded chatbot", values: ["✓", "✓", "✓"] },
+  { feature: "Messaging channel bot", values: ["-", "✓", "✓"] },
+  { feature: "Document-aware answers", values: ["-", "-", "✓"] },
+  { feature: "Lead database & export", values: ["✓", "✓", "✓"] },
+  { feature: "Notifications", values: ["Email", "Email + preferred channel", "Email + preferred channels"] },
+  { feature: "Support", values: ["Guided onboarding", "Priority updates", "Dedicated success + analytics"] },
+];
+
+const processSteps = [
+  "Book a free consultation.",
+  "We build your landing page and configure your chatbot.",
+  "Go live and start capturing leads automatically.",
+  "Receive instant notifications and grow your customer base effortlessly.",
 ];
 
 const faqs = [
   {
-    q: "Can I export my leads?",
-    a: "Yes, download them anytime.",
+    question: "How can a chatbot help my business grow?",
+    answer:
+      "Our bots capture leads, answer FAQs, and save your team hours every week so you can focus on closing deals.",
   },
   {
-    q: "Which channel is supported?",
-    a: "Telegram is the only supported messaging channel.",
+    question: "What messaging services are supported?",
+    answer: "We can integrate with popular platforms like Telegram, WhatsApp, and more.",
   },
   {
-    q: "What do I need to get started?",
-    a: "Your FAQs and, for Pro, the documents you want the bot to use.",
+    question: "Can chatbots answer using my documents?",
+    answer:
+      "With our Smart Insights plan, your bot can provide answers directly from your uploaded PDFs and docs, complete with source citations.",
   },
 ];
 
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 bg-grid-light opacity-90 dark:hidden" />
-      <div className="pointer-events-none absolute inset-0 hidden bg-grid-dark opacity-80 dark:block" />
-      <div className="pointer-events-none absolute inset-0 floating-particles opacity-50 dark:opacity-35" />
+      <ForestBackdrop />
       <div className="relative">
         <Navbar />
-        <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-6 pb-24 pt-16">
-          <PromoBanner />
+        <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-6 pb-12 pt-20 md:gap-20 md:pb-16 md:pt-24">
           <Hero />
-          <Value />
-          <HowItWorks />
-          <Plans />
-          <FAQs />
+          <ValueSection />
+          <AboutSection />
+          <ApproachSection />
+          <PlansSection />
+          <ProcessSection />
+          <FAQSection />
           <FinalCTA />
         </main>
         <Footer />
@@ -111,36 +97,50 @@ export default function Home() {
   );
 }
 
+function ForestBackdrop() {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-0 bg-forest-sky dark:hidden" />
+      <div className="pointer-events-none absolute inset-0 hidden bg-forest-sky-dark dark:block" />
+      <div className="pointer-events-none absolute inset-0 pine-texture opacity-30 dark:opacity-20" />
+      <div className="pointer-events-none absolute inset-0 floating-particles opacity-30 dark:opacity-25" />
+    </>
+  );
+}
+
 function Navbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
         <Link href="#" className="flex items-center gap-3">
           <Image
-            src="/hola.svg"
-            alt="TunnelServices logo"
-            width={36}
-            height={36}
+            src="/favicon.png"
+            alt="Tunnels Services logo"
+            width={44}
+            height={44}
             priority
-            className="h-9 w-9 rounded-lg border border-border/60 object-cover shadow-sm"
+            className="h-11 w-11 rounded-lg border border-border/60 object-cover shadow-sm bg-transparent p-0.5 dark:bg-white"
           />
-          <div className="text-sm font-medium text-foreground/85">TunnelServices</div>
+          <div className="text-sm font-semibold tracking-wide text-foreground/85">Tunnels Services</div>
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-foreground/70 md:flex">
-          {navLinks.map((link) => (
-            <Link key={link.label} href={link.href} className="transition-colors hover:text-foreground/95">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Button
-            size="lg"
-            className="hidden rounded-lg bg-primary px-7 text-sm font-semibold text-primary-foreground shadow-[0_12px_30px_rgba(40,123,255,0.3)] md:inline-flex"
-          >
-            Talk to an expert
-          </Button>
+        <div className="flex items-center gap-4">
+          <nav className="hidden items-center gap-6 text-sm font-medium text-foreground/70 md:flex">
+            {navLinks.map((link) => (
+              <Link key={link.label} href={link.href} className="transition-colors hover:text-foreground/95">
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex items-center gap-3">
+            <ContactDialog
+              trigger={
+                <Button className="hidden rounded-full border border-primary/20 bg-primary px-5 text-xs font-semibold uppercase tracking-[0.26em] text-primary-foreground shadow-[0_14px_30px_rgba(62,120,200,0.25)] transition-colors hover:bg-primary/90 dark:border-primary/40 dark:bg-primary/90 dark:text-primary-foreground md:inline-flex">
+                  Get in contact
+                </Button>
+              }
+            />
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>
@@ -149,114 +149,103 @@ function Navbar() {
 
 function Hero() {
   return (
-    <section className="grid gap-12 md:grid-cols-[minmax(0,520px)_1fr] md:items-center">
-      <div className="space-y-7 text-left">
-        <p className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-primary/80">
-          Turn visitors into qualified leads
-        </p>
-        <h1 className="text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-[44px]">
-          Landing + Telegram bot that captures and answers
-        </h1>
-        <p className="text-base text-foreground dark:text-foreground">
-          Built to start conversations, handle quick questions, and log every contact in your database. Straightforward, ready to sell.
-        </p>
-        <div className="grid gap-3">
-          {heroHighlights.map((item) => (
-            <div key={item} className="flex items-center gap-2 text-sm text-foreground dark:text-foreground">
-              <Check className="h-4 w-4 text-primary" />
-              <span>{item}</span>
+    <section className="relative overflow-hidden rounded-3xl border border-border/80 bg-card/70 p-8 text-white shadow-[0_32px_68px_rgba(18,34,60,0.3)] md:p-12">
+      <div className="pointer-events-none absolute inset-0 forest-wallpaper opacity-75" />
+      <div className="pointer-events-none absolute inset-0 hero-overlay dark:hidden" />
+      <div className="pointer-events-none absolute inset-0 hidden hero-overlay-dark dark:block" />
+      <div className="relative grid gap-12 md:grid-cols-[minmax(0,500px)_1fr] md:items-center">
+        <div className="space-y-8 text-white">
+          <div className="inline-flex items-center gap-3 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-white/85">
+            <Sparkles className="h-4 w-4 text-white" />
+            Automated growth agency
+          </div>
+          <h1 className="text-4xl font-semibold leading-tight tracking-tight text-white sm:text-[46px]">
+            Grow Smarter With Automated Lead Capture &amp; Instant Answers
+          </h1>
+          <p className="text-base text-white/80">
+            Empower your business with a custom landing page and intelligent chatbots - capturing leads, answering
+            questions, and saving you time, 24/7.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-5 text-sm text-white/80 backdrop-blur-md">
+              <p className="font-semibold text-white/90">What changes</p>
+              <p className="mt-2">
+                From the moment visitors land, they receive precise answers and a clear route to convert.
+              </p>
             </div>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-4">
-          <Button className="rounded-xl bg-primary px-12 py-5 text-sm font-semibold uppercase tracking-[0.28em] text-primary-foreground shadow-[0_18px_40px_rgba(40,123,255,0.35)] dark:shadow-[0_18px_40px_rgba(10,20,45,0.6)]">
-            Start with Starter
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="rounded-xl border-border bg-white px-10 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-foreground shadow-sm dark:border-white/[15%] dark:bg-transparent dark:text-foreground/80"
-          >
-            See Pro with documents
-          </Button>
-        </div>
-      </div>
-      <div className="hidden h-full w-full items-center justify-end md:flex">
-        <div className="w-full max-w-xs rounded-3xl border border-border bg-card p-8 shadow-[0_18px_40px_rgba(50,110,190,0.16)] dark:border-border/60 dark:bg-card/80 dark:shadow-[0_18px_40px_rgba(5,12,25,0.6)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/80 dark:text-primary/65">
-            Essentials
-          </p>
-          <ul className="mt-4 space-y-2 text-sm text-foreground/85 dark:text-foreground/75">
-            <li>• Chat widget on your landing</li>
-            <li>• Channel: Telegram</li>
-            <li>• Lead capture</li>
-            <li>• Email alert</li>
-          </ul>
-          <p className="mt-4 text-xs text-foreground/70 dark:text-foreground/65">Ready to use in days.</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PromoBanner() {
-  return (
-    <section className="flex items-center justify-between gap-4 rounded-2xl border border-primary/35 bg-gradient-to-r from-primary/15 via-primary/10 to-transparent px-6 py-4 text-sm text-foreground shadow-[0_20px_45px_rgba(40,123,255,0.18)] dark:border-primary/30 dark:from-primary/20 dark:via-primary/10 dark:to-transparent dark:text-foreground">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_25px_rgba(40,123,255,0.35)]">
-          <Sparkles className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary dark:text-primary/90">Chatbot plans</p>
-          <p className="text-base font-medium text-foreground dark:text-foreground">
-            Launch a Telegram chatbot and get the landing page included, no extra charge.
-          </p>
-        </div>
-      </div>
-      <div className="hidden text-xs font-semibold uppercase tracking-[0.32em] text-primary/80 md:block">
-        Ready in days
-      </div>
-    </section>
-  );
-}
-
-function Value() {
-  return (
-    <section id="benefits" className="space-y-8">
-      <SectionHeading
-        eyebrow="Benefits"
-        title="What delivers results"
-        description="Less friction, more leads. Everything easy to understand."
-      />
-      <div className="grid gap-3">
-        {valueBullets.map((item) => (
-          <div key={item} className="flex items-center gap-2 text-sm text-foreground">
-            <Check className="h-4 w-4 text-primary" />
-            <span>{item}</span>
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-5 text-sm text-white/80 backdrop-blur-md">
+              <p className="font-semibold text-white/90">Why it works</p>
+              <p className="mt-2">
+                We layer trust-driven design with automation, ensuring every interaction feels immediate and reliable.
+              </p>
+            </div>
           </div>
-        ))}
+          <div className="flex flex-wrap gap-4">
+            <ContactDialog
+              trigger={
+                <Button className="rounded-xl bg-primary px-10 py-4 text-sm font-semibold uppercase tracking-[0.28em] text-primary-foreground shadow-[0_18px_48px_rgba(20,60,140,0.4)] transition-colors hover:bg-primary/90 dark:bg-primary/90 dark:text-primary-foreground">
+                  Start Today
+                </Button>
+              }
+            />
+            <ContactDialog
+              trigger={
+                <Button
+                  variant="outline"
+                  className="rounded-xl border border-white/40 bg-white/10 px-10 py-4 text-xs font-semibold uppercase tracking-[0.28em] text-white/90 backdrop-blur-md transition-colors hover:bg-white/20 dark:border-white/30"
+                >
+                  Book a Demo
+                </Button>
+              }
+            />
+          </div>
+        </div>
+        <div className="hidden md:flex md:justify-end">
+          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-8 text-sm text-white/80 shadow-[0_26px_60px_rgba(10,24,48,0.45)] backdrop-blur-xl">
+            <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/12 blur-3xl" />
+            <div className="relative space-y-5">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-10 w-10 rounded-full bg-white/12 p-2 text-white" />
+                <div>
+                  <p className="text-sm font-semibold text-white/90">Confidence signals</p>
+                  <p className="text-xs text-white/65">Designed into every flow</p>
+                </div>
+              </div>
+              <p>
+                Clear privacy messaging, human escalation paths, and audit-ready logs keep visitors and teams aligned.
+              </p>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-xs text-white/75 backdrop-blur-md">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-white/80">Time-to-response</span>
+                  <span className="font-semibold text-white">Instant</span>
+                </div>
+                <p className="mt-2 text-white/65">
+                  Escalations route to your team with full context and lead data.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-function HowItWorks() {
+function ValueSection() {
   return (
-    <section id="how-it-works" className="space-y-8">
+    <section id="value" className="space-y-8">
       <SectionHeading
-        eyebrow="How it works"
-        title="Fast setup, immediate value"
-        description="Everything you need to start capturing within days."
+        eyebrow="Our Value Proposition"
+        title="How can you capture more leads automatically?"
+        description="We combine intelligent automation with high-converting landing page design, giving visitors answers the moment they ask."
       />
-      <div className="grid gap-6 md:grid-cols-4">
-        {howItWorks.map((step, index) => (
+      <div className="grid gap-4 sm:grid-cols-3">
+        {valuePoints.map((point) => (
           <div
-            key={step.title}
-            className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-8 text-sm text-foreground shadow-[0_18px_40px_rgba(60,112,185,0.16)] dark:bg-card/90 dark:text-foreground dark:shadow-[0_16px_45px_rgba(5,12,25,0.6)]"
+            key={point}
+            className="rounded-2xl border border-border bg-card/95 p-6 text-sm text-foreground shadow-sm backdrop-blur-sm dark:bg-card/85"
           >
-            <span className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">0{index + 1}</span>
-            <p className="text-sm font-semibold text-foreground">{step.title}</p>
-            <p className="text-foreground/85 dark:text-foreground/80">{step.summary}</p>
+            <p>{point}</p>
           </div>
         ))}
       </div>
@@ -264,37 +253,116 @@ function HowItWorks() {
   );
 }
 
-function Plans() {
+function AboutSection() {
+  return (
+    <section id="about" className="grid gap-8 rounded-3xl border border-border/70 bg-card/90 p-10 shadow-[0_26px_60px_rgba(32,72,132,0.18)] backdrop-blur-lg dark:border-border/45 dark:bg-card/70">
+      <SectionHeading
+        eyebrow="About us"
+        title="Technology-driven, growth-focused"
+        description="We’re a technology-driven agency focused on helping businesses grow through automation. Our solutions combine beautiful landing pages with smart chatbot technology, ensuring you never miss a lead and always deliver top-notch support."
+      />
+      <div className="grid gap-5 sm:grid-cols-3">
+        <InsightBadge icon={MessageSquare} label="24/7 coverage" detail="Chatbots resolve FAQs so your team can rest." />
+        <InsightBadge icon={Timer} label="Faster handoffs" detail="Instant notifications with context-rich lead data." />
+        <InsightBadge
+          icon={FileText}
+          label="Ready to scale"
+          detail="Landing + chatbot stack evolves with your channels and docs."
+        />
+      </div>
+    </section>
+  );
+}
+
+function ApproachSection() {
+  return (
+    <section id="approach" className="space-y-8">
+      <SectionHeading
+        eyebrow="Our Approach"
+        title="A delivery model built for clarity and momentum"
+        description="Every engagement is managed with transparency, iteration, and measurable checkpoints."
+      />
+      <div className="grid gap-5 md:grid-cols-2">
+        {approachPoints.map((point) => (
+          <div
+            key={point.title}
+            className="rounded-3xl border border-border/70 bg-card/95 p-6 shadow-[0_18px_45px_rgba(32,72,132,0.14)] backdrop-blur-md dark:border-border/45 dark:bg-card/80"
+          >
+            <p className="text-sm font-semibold text-foreground">{point.title}</p>
+            <p className="mt-2 text-sm text-foreground/75">{point.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PlansSection() {
   return (
     <section id="plans" className="space-y-8">
       <SectionHeading
-        eyebrow="Plans"
-        title="Choose how to start"
-        description="Two clear options. No fine print."
+        eyebrow="Plans & Pricing"
+        title="Compare the right level of automation for your team"
+        description="From foundational lead capture to document-aware intelligence."
       />
-      <div className="grid gap-6 md:grid-cols-2">
-        {plans.map((plan) => (
-          <div
-            key={plan.name}
-            className="rounded-2xl border border-border bg-card p-8 shadow-[0_18px_45px_rgba(70,130,210,0.16)] dark:bg-card/90 dark:shadow-[0_16px_45px_rgba(5,12,25,0.6)]"
-          >
-            <p className="text-base font-semibold text-foreground">{plan.name}</p>
-            {plan.summary && (
-              <p className="mt-2 text-sm text-foreground/80 dark:text-foreground/75">{plan.summary}</p>
-            )}
-            <ul className="mt-4 space-y-2 text-sm text-foreground/85 dark:text-foreground">
-              {plan.features.map((f) => (
-                <li key={f} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-primary" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-6">
-              <Button className="rounded-lg bg-primary px-6 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-primary-foreground">
-                {plan.cta}
-              </Button>
+      <div className="overflow-hidden rounded-3xl border border-border/80 bg-card/95 shadow-[0_26px_60px_rgba(32,72,132,0.16)] backdrop-blur-md">
+        <div className="grid grid-cols-[180px_repeat(3,minmax(0,1fr))] border-b border-border/70 bg-secondary/40 px-6 py-4 text-xs font-semibold uppercase tracking-[0.28em] text-foreground/70">
+          <div className="text-left">Plan</div>
+          {planColumns.map((plan) => (
+            <div key={plan} className="text-center text-foreground font-semibold">
+              {plan}
             </div>
+          ))}
+        </div>
+        <div className="divide-y divide-border/60 text-sm">
+          {planMatrix.map((row) => (
+            <div key={row.feature} className="grid grid-cols-[180px_repeat(3,minmax(0,1fr))] px-6 py-4">
+              <div className="font-medium text-foreground/80">{row.feature}</div>
+              {row.values.map((value, index) => (
+                <div key={`${row.feature}-${planColumns[index]}`} className="text-center text-foreground/80">
+                  {value === "✓" ? (
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary">
+                      <Check className="h-4 w-4" />
+                    </span>
+                  ) : value === "-" ? (
+                    <span className="text-lg font-semibold text-foreground/30">-</span>
+                  ) : (
+                    <span>{value}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-3 text-xs text-foreground/60">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-4 py-2 uppercase tracking-[0.22em]">
+          Transparent setup + monthly maintenance
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-4 py-2 uppercase tracking-[0.22em]">
+          Upgrade any time
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function ProcessSection() {
+  return (
+    <section id="process" className="space-y-8">
+      <SectionHeading
+        eyebrow="How It Works"
+        title="Launch in weeks, scale in days"
+        description="We guide you from kickoff to go-live with transparent milestones and ongoing support."
+      />
+      <div className="grid gap-4 md:grid-cols-4">
+        {processSteps.map((step, index) => (
+          <div
+            key={step}
+            className="flex flex-col gap-3 rounded-2xl border border-border bg-card/95 p-6 text-sm text-foreground shadow-[0_18px_42px_rgba(32,72,132,0.14)] dark:bg-card/80"
+          >
+            <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/80">0{index + 1}</span>
+            <p className="text-foreground/80">{step}</p>
           </div>
         ))}
       </div>
@@ -302,22 +370,22 @@ function Plans() {
   );
 }
 
-function FAQs() {
+function FAQSection() {
   return (
     <section id="faqs" className="space-y-8">
       <SectionHeading
         eyebrow="FAQs"
-        title="Quick answers"
-        description="Only what matters, no jargon."
+        title="Quick answers to the most common questions"
+        description="Have more questions? We’ll address them during your demo."
       />
       <div className="grid gap-6 md:grid-cols-3">
-        {faqs.map((item) => (
+        {faqs.map((faq) => (
           <div
-            key={item.q}
-            className="rounded-2xl border border-border bg-card p-6 text-sm text-foreground shadow-[0_12px_30px_rgba(70,130,210,0.12)] dark:bg-card/90 dark:shadow-[0_12px_30px_rgba(5,12,25,0.5)]"
+            key={faq.question}
+            className="rounded-2xl border border-border bg-card/95 p-6 text-sm text-foreground shadow-sm dark:bg-card/80"
           >
-            <p className="font-semibold text-foreground">{item.q}</p>
-            <p className="mt-2 text-foreground/85">{item.a}</p>
+            <p className="font-semibold text-foreground">{faq.question}</p>
+            <p className="mt-2 text-foreground/75">{faq.answer}</p>
           </div>
         ))}
       </div>
@@ -329,21 +397,32 @@ function FinalCTA() {
   return (
     <section
       id="contact"
-      className="space-y-6 rounded-2xl border border-border bg-card px-6 py-10 text-center text-sm text-foreground shadow-[0_18px_45px_rgba(60,120,200,0.16)] dark:bg-card/85 dark:text-foreground dark:shadow-[0_18px_45px_rgba(5,12,25,0.6)]"
+      className="space-y-6 rounded-3xl border border-border/70 bg-card/95 px-6 py-12 text-center text-sm text-foreground shadow-[0_26px_60px_rgba(32,72,132,0.18)] backdrop-blur-md dark:border-border/45 dark:bg-card/75"
     >
       <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-        Start today: we set everything up and you capture leads in days.
+        Ready to automate and grow?
       </h2>
-      <div className="flex flex-wrap justify-center gap-3">
-        <Button className="rounded-xl bg-primary px-10 py-4 text-sm font-semibold uppercase tracking-[0.3em] text-primary-foreground shadow-[0_16px_40px_rgba(40,123,255,0.3)]">
-          Start with Starter
-        </Button>
-        <Button
-          variant="outline"
-          className="rounded-xl border-border bg-transparent px-8 py-4 text-xs font-semibold uppercase tracking-[0.3em] text-foreground dark:text-foreground/80"
-        >
-          See Pro with documents
-        </Button>
+      <p className="mx-auto max-w-2xl text-foreground/75">
+        Contact us for a personalized demo and see how we can capture more value for your business, starting today.
+      </p>
+      <div className="flex flex-wrap justify-center gap-4">
+        <ContactDialog
+          trigger={
+            <Button className="rounded-xl bg-primary px-10 py-4 text-sm font-semibold uppercase tracking-[0.3em] text-primary-foreground shadow-[0_18px_48px_rgba(44,104,180,0.35)] transition-colors hover:bg-primary/90 dark:bg-primary/90 dark:text-primary-foreground">
+              Start Today
+            </Button>
+          }
+        />
+        <ContactDialog
+          trigger={
+            <Button
+              variant="outline"
+              className="rounded-xl border border-border/70 bg-transparent px-8 py-4 text-xs font-semibold uppercase tracking-[0.3em] text-foreground transition-colors hover:bg-secondary/40 dark:border-border/45 dark:text-foreground/80 dark:hover:bg-secondary/30"
+            >
+              Book a Demo
+            </Button>
+          }
+        />
       </div>
     </section>
   );
@@ -351,14 +430,23 @@ function FinalCTA() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border bg-background/85">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-12 text-sm text-foreground/70 md:flex-row md:items-start md:justify-between">
-        <p>TunnelServices · Practical AI and automation.</p>
-        <div className="space-y-2">
+    <footer className="border-t border-border bg-background/95">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10 text-sm text-foreground/65 md:flex-row md:items-start md:justify-between">
+        <p className="max-w-sm text-foreground/70">
+          Tunnels Services · Automated lead capture and intelligent support.
+        </p>
+        <div className="space-y-2 text-foreground/70">
           <p>tunnels.agency@gmail.com</p>
         </div>
-        <div className="space-y-2">
-          <p>LinkedIn</p>
+        <div className="space-y-2 text-foreground/70">
+          <a
+            href="https://www.linkedin.com/company/tunnels-agency"
+            rel="noopener noreferrer"
+            target="_blank"
+            className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            LinkedIn
+          </a>
         </div>
       </div>
     </footer>
@@ -375,10 +463,33 @@ function SectionHeading({
   description: string;
 }) {
   return (
-    <div className="space-y-2 text-left">
-      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary/80">{eyebrow}</p>
-      <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[28px]">{title}</h2>
-      <p className="text-sm text-foreground/75">{description}</p>
+    <div className="space-y-3 text-left">
+      <div className="flex items-center gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary/75">{eyebrow}</p>
+        <span className="hidden h-px flex-1 bg-gradient-to-r from-primary/45 via-primary/15 to-transparent sm:block" />
+      </div>
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[30px]">{title}</h2>
+      <p className="max-w-2xl text-sm text-foreground/70">{description}</p>
+    </div>
+  );
+}
+
+function InsightBadge({
+  icon: Icon,
+  label,
+  detail,
+}: {
+  icon: typeof MessageSquare;
+  label: string;
+  detail: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/95 p-5 text-sm text-foreground shadow-sm dark:border-border/40 dark:bg-card/75">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/12 text-primary">
+        <Icon className="h-5 w-5" />
+      </span>
+      <p className="font-semibold text-foreground">{label}</p>
+      <p className="text-foreground/70">{detail}</p>
     </div>
   );
 }

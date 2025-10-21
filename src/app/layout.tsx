@@ -14,25 +14,25 @@ const mono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
-const title = "TunnelServices — IA y Automatización que convierten";
+const title = "Tunnels Services — IA y Automatización que convierten";
 const description =
   "Bots conversacionales, flujos automatizados e inteligencia aplicada. De idea a ROI sin fricción.";
 
 export const metadata: Metadata = {
   title,
   description,
-  metadataBase: new URL("https://tunnelservices.ai"),
+  metadataBase: new URL("https://tunnelsservices.ai"),
   openGraph: {
     title,
     description,
-    url: "https://tunnelservices.ai",
-    siteName: "TunnelServices",
+    url: "https://tunnelsservices.ai",
+    siteName: "Tunnels Services",
     images: [
       {
         url: "/og/tunnelservices-og-dark.svg",
         width: 1200,
         height: 630,
-        alt: "TunnelServices — IA y Automatización que convierten",
+        alt: "Tunnels Services — IA y Automatización que convierten",
       },
     ],
   },
@@ -43,8 +43,12 @@ export const metadata: Metadata = {
     images: ["/og/tunnelservices-og-dark.svg"],
   },
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    shortcut: ["/favicon.svg"],
+    icon: [
+      { url: "/favicon.png", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/favicon.png" }],
+    shortcut: ["/favicon.png"],
   },
 };
 
@@ -54,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es">
       <body
         className={`${manrope.variable} ${mono.variable} antialiased`}
         suppressHydrationWarning

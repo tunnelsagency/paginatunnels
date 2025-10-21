@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 45 22% 92%;
-    --foreground: 218 22% 20%;
-    --card: 45 16% 94%;
-    --card-foreground: 218 22% 20%;
-    --popover: 45 16% 94%;
-    --popover-foreground: 218 22% 20%;
-    --primary: 208 94% 52%;
+    --background: 214 40% 96%;
+    --foreground: 216 22% 18%;
+    --card: 214 36% 98%;
+    --card-foreground: 216 22% 18%;
+    --popover: 214 36% 98%;
+    --popover-foreground: 216 22% 18%;
+    --primary: 212 74% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 45 18% 84%;
-    --secondary-foreground: 218 26% 24%;
-    --muted: 45 16% 80%;
-    --muted-foreground: 218 20% 32%;
-    --accent: 202 100% 60%;
+    --secondary: 214 32% 92%;
+    --secondary-foreground: 216 18% 28%;
+    --muted: 214 24% 88%;
+    --muted-foreground: 216 16% 38%;
+    --accent: 206 70% 50%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 68% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 45 18% 74%;
-    --input: 45 18% 74%;
-    --ring: 208 94% 52%;
+    --border: 214 22% 80%;
+    --input: 214 22% 80%;
+    --ring: 212 74% 45%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222 42% 6%;
-    --foreground: 210 35% 96%;
-    --card: 220 32% 12%;
-    --card-foreground: 210 35% 96%;
-    --popover: 220 32% 12%;
-    --popover-foreground: 210 35% 96%;
-    --primary: 204 92% 55%;
-    --primary-foreground: 222 42% 8%;
-    --secondary: 222 28% 18%;
-    --secondary-foreground: 210 33% 94%;
-    --muted: 222 25% 22%;
-    --muted-foreground: 210 20% 72%;
-    --accent: 200 100% 68%;
-    --accent-foreground: 222 40% 8%;
-    --destructive: 0 68% 50%;
-    --destructive-foreground: 210 35% 96%;
-    --border: 222 26% 26%;
-    --input: 222 26% 26%;
-    --ring: 204 92% 55%;
+    --background: 216 60% 6%;
+    --foreground: 214 44% 96%;
+    --card: 216 48% 10%;
+    --card-foreground: 214 44% 96%;
+    --popover: 216 48% 12%;
+    --popover-foreground: 214 44% 96%;
+    --primary: 210 82% 62%;
+    --primary-foreground: 218 56% 6%;
+    --secondary: 220 38% 16%;
+    --secondary-foreground: 214 40% 92%;
+    --muted: 220 30% 18%;
+    --muted-foreground: 214 28% 68%;
+    --accent: 206 76% 54%;
+    --accent-foreground: 218 56% 6%;
+    --destructive: 2 74% 50%;
+    --destructive-foreground: 214 44% 96%;
+    --border: 220 28% 24%;
+    --input: 220 28% 24%;
+    --ring: 210 82% 62%;
   }
 
   * {
@@ -63,27 +63,67 @@
 @layer utilities {
   .bg-grid-light {
     background-image:
-      linear-gradient(rgba(32, 44, 60, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(32, 44, 60, 0.04) 1px, transparent 1px),
-      radial-gradient(circle at center, rgba(90, 138, 198, 0.1), transparent 55%),
-      linear-gradient(180deg, rgba(241, 240, 235, 0.9), rgba(215, 220, 226, 0.45));
+      linear-gradient(rgba(28, 52, 78, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(28, 52, 78, 0.04) 1px, transparent 1px),
+      radial-gradient(circle at center, rgba(120, 162, 210, 0.1), transparent 55%),
+      linear-gradient(180deg, rgba(236, 243, 252, 0.95), rgba(206, 224, 244, 0.55));
     background-size: 36px 36px, 36px 36px, 100% 100%, 100% 100%;
     background-position: -18px -18px, -18px -18px, 0 0, 0 0;
   }
 
-  .bg-grid-dark {
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      radial-gradient(circle at center, rgba(40, 120, 250, 0.16), transparent 55%),
-      linear-gradient(180deg, rgba(10, 16, 28, 0.88), rgba(5, 8, 15, 1));
-    background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%;
-    background-position: -24px -24px, -24px -24px, 0 0, 0 0;
-  }
-
   .floating-particles::before,
   .floating-particles::after {
-    background: radial-gradient(circle, rgba(70, 120, 180, 0.08) 0%, transparent 50%);
+    content: "";
+    position: absolute;
+    inset: 10%;
+    background: radial-gradient(circle, rgba(80, 150, 220, 0.08) 0%, transparent 55%);
+    filter: blur(0.5px);
+    animation: float 18s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .floating-particles::after {
+    inset: 20%;
+    animation-duration: 24s;
+    opacity: 0.7;
+  }
+
+  .bg-forest-sky {
+    background: linear-gradient(180deg, rgba(230, 240, 252, 0.95) 0%, rgba(208, 226, 246, 0.88) 45%, rgba(188, 214, 240, 0.92) 75%, rgba(166, 198, 232, 0.95) 100%);
+  }
+
+  .bg-forest-sky-dark {
+    background: linear-gradient(180deg, rgba(6, 14, 26, 0.96) 0%, rgba(5, 16, 28, 0.96) 65%, rgba(4, 12, 22, 0.98) 100%);
+  }
+
+  .forest-line {
+    background-image: url("/forest-silhouette-blue.svg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: bottom;
+    opacity: 0.8;
+  }
+
+  .pine-texture {
+    background-image: radial-gradient(circle at 25% 25%, rgba(70, 110, 160, 0.08) 0%, transparent 55%), radial-gradient(circle at 75% 65%, rgba(48, 82, 128, 0.08) 0%, transparent 55%);
+    background-size: 320px 320px, 360px 360px;
+    mix-blend-mode: multiply;
+  }
+
+  .forest-wallpaper {
+    background-image: radial-gradient(circle at center, rgba(16, 28, 46, 0.6), rgba(16, 28, 46, 0.8)), url("/forest-wallpaper.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    filter: saturate(0.9);
+  }
+
+  .hero-overlay {
+    background: linear-gradient(180deg, rgba(18, 32, 52, 0.7) 0%, rgba(18, 32, 52, 0.55) 60%, rgba(12, 24, 40, 0.8) 100%);
+  }
+
+  .hero-overlay-dark {
+    background: linear-gradient(180deg, rgba(4, 10, 22, 0.9) 0%, rgba(6, 14, 26, 0.92) 55%, rgba(8, 18, 32, 0.96) 100%);
   }
 }
 
