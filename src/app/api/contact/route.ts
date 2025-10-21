@@ -1,21 +1,24 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const RECIPIENT = "tunnels.services@gmail.com";
-const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS ?? "Tunnels Services <noreply@tunnelsservices.ai>";
+const DEFAULT_FROM = "Tunnels Services <onboarding@resend.dev>";
 
 export async function POST(request: Request) {
-  if (!process.env.RESEND_API_KEY) {
-    return NextResponse.json({ error: "Missing Resend API key." }, { status: 500 });
-  }
-
   try {
     const { name, email, company, message } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
+
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "Missing Resend API key." }, { status: 500 });
+    }
+
+    const resend = new Resend(apiKey);
+    const fromAddress = process.env.RESEND_FROM_ADDRESS ?? DEFAULT_FROM;
 
     const lines = [
       `Name: ${name || "Not provided"}`,
@@ -26,7 +29,7 @@ export async function POST(request: Request) {
     ];
 
     await resend.emails.send({
-      from: FROM_ADDRESS,
+      from: fromAddress,
       to: RECIPIENT,
       replyTo: email,
       subject: `Demo request from ${name || "website visitor"}`,
