@@ -126,7 +126,13 @@ function Navbar() {
         <div className="flex items-center gap-4">
           <nav className="hidden items-center gap-6 text-sm font-medium text-foreground/70 md:flex">
             {navLinks.map((link) => (
-              <Link key={link.label} href={link.href} className="transition-colors hover:text-foreground/95">
+              <Link
+                key={link.label}
+                href={link.href}
+                prefetch={false}
+                scroll
+                className="transition-colors hover:text-foreground/95"
+              >
                 {link.label}
               </Link>
             ))}
