@@ -77,6 +77,14 @@ const faqs = [
 ];
 
 export default function Home() {
+  const clientId = process.env.NEXT_PUBLIC_UNLOQUIA_CLIENT_ID;
+
+  if (process.env.NODE_ENV !== "production" && !clientId) {
+    console.warn(
+      "Unloquia chat widget disabled: missing NEXT_PUBLIC_UNLOQUIA_CLIENT_ID env variable."
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <ForestBackdrop />
@@ -94,9 +102,11 @@ export default function Home() {
         </main>
         <Footer />
       </div>
-      <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-[360px] -translate-x-1/2 sm:left-auto sm:right-4 sm:translate-x-0 md:bottom-6 md:right-6">
-        <UnloquiaChatWidget clientId="CLIENT_ID" />
-      </div>
+      {clientId ? (
+        <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-[360px] -translate-x-1/2 sm:left-auto sm:right-4 sm:translate-x-0 md:bottom-6 md:right-6">
+          <UnloquiaChatWidget clientId={clientId} />
+        </div>
+      ) : null}
     </div>
   );
 }
