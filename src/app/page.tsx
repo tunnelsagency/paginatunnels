@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Check, FileText, MessageSquare, ShieldCheck, Sparkles, Timer } from "lucide-react";
+import { Check, FileText, MessageSquare, Sparkles, Timer } from "lucide-react";
 
 import { ContactDialog } from "@/components/contact-dialog";
+import UnloquiaChatWidget from "@/components/UnloquiaChatWidget";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
@@ -206,30 +207,10 @@ function Hero() {
             />
           </div>
         </div>
-        <div className="hidden md:flex md:justify-end">
-          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-8 text-sm text-white/80 shadow-[0_26px_60px_rgba(10,24,48,0.45)] backdrop-blur-xl">
-            <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/12 blur-3xl" />
-            <div className="relative space-y-5">
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="h-10 w-10 rounded-full bg-white/12 p-2 text-white" />
-                <div>
-                  <p className="text-sm font-semibold text-white/90">Confidence signals</p>
-                  <p className="text-xs text-white/65">Designed into every flow</p>
-                </div>
-              </div>
-              <p>
-                Clear privacy messaging, human escalation paths, and audit-ready logs keep visitors and teams aligned.
-              </p>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-xs text-white/75 backdrop-blur-md">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-white/80">Time-to-response</span>
-                  <span className="font-semibold text-white">Instant</span>
-                </div>
-                <p className="mt-2 text-white/65">
-                  Escalations route to your team with full context and lead data.
-                </p>
-              </div>
-            </div>
+        <div className="flex justify-center md:justify-end">
+          <div className="relative">
+            <div className="pointer-events-none absolute -left-12 -top-12 h-24 w-24 rounded-full bg-white/20 blur-3xl md:-right-12 md:left-auto" />
+            <UnloquiaChatWidget clientId="CLIENT_ID" />
           </div>
         </div>
       </div>
