@@ -36,6 +36,7 @@ export default function UnloquiaChatWidget({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     if (externalUserId) {
@@ -54,9 +55,86 @@ export default function UnloquiaChatWidget({
     setStoredUserId(generated);
   }, [externalUserId]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const root = document.documentElement;
+    const update = () => setIsDarkMode(root.classList.contains('dark'));
+    update();
+
+    if (typeof MutationObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new MutationObserver(update);
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
+
   const userId = useMemo(
     () => externalUserId ?? storedUserId,
     [externalUserId, storedUserId],
+  );
+
+  const theme = useMemo(
+    () =>
+      isDarkMode
+        ? {
+            containerBg: '#0f172a',
+            containerBorder: 'rgba(148, 163, 184, 0.18)',
+            containerShadow: '0 36px 90px rgba(8, 47, 73, 0.55)',
+            headerBg: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+            headerDivider: 'rgba(37, 99, 235, 0.35)',
+            headerText: '#f8fafc',
+            headerCaption: 'rgba(226, 232, 240, 0.75)',
+            bodyBg: '#111827',
+            emptyState: 'rgba(203, 213, 225, 0.75)',
+            userBubbleBg: '#2563eb',
+            userBubbleText: '#f8fafc',
+            botBubbleBg: 'rgba(15, 23, 42, 0.9)',
+            botBubbleText: '#e2e8f0',
+            bubbleShadowUser: '0 10px 24px rgba(37, 99, 235, 0.35)',
+            bubbleShadowBot: '0 14px 28px rgba(15, 23, 42, 0.45)',
+            inputBg: 'rgba(17, 24, 39, 0.95)',
+            inputBorder: 'rgba(148, 163, 184, 0.4)',
+            inputText: '#e2e8f0',
+            buttonActive: '#3b82f6',
+            buttonDisabled: 'rgba(75, 85, 99, 0.7)',
+            divider: 'rgba(148, 163, 184, 0.2)',
+            errorBg: 'rgba(127, 29, 29, 0.45)',
+            errorText: '#fecaca',
+            initializingText: 'rgba(203, 213, 225, 0.7)',
+          }
+        : {
+            containerBg: '#ffffff',
+            containerBorder: 'rgba(15, 23, 42, 0.12)',
+            containerShadow: '0 30px 80px rgba(15, 23, 42, 0.18)',
+            headerBg: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+            headerDivider: 'rgba(37, 99, 235, 0.22)',
+            headerText: '#ffffff',
+            headerCaption: 'rgba(255, 255, 255, 0.85)',
+            bodyBg: '#f9fafb',
+            emptyState: '#6b7280',
+            userBubbleBg: '#2563eb',
+            userBubbleText: '#ffffff',
+            botBubbleBg: '#ffffff',
+            botBubbleText: '#111827',
+            bubbleShadowUser: '0 10px 20px rgba(37, 99, 235, 0.25)',
+            bubbleShadowBot: '0 12px 24px rgba(15, 23, 42, 0.12)',
+            inputBg: '#ffffff',
+            inputBorder: '#d1d5db',
+            inputText: '#111827',
+            buttonActive: '#2563eb',
+            buttonDisabled: '#9ca3af',
+            divider: '#e5e7eb',
+            errorBg: '#fef2f2',
+            errorText: '#b91c1c',
+            initializingText: '#6b7280',
+          },
+    [isDarkMode],
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -132,11 +210,11 @@ export default function UnloquiaChatWidget({
     <div
       style={{
         width: '100%',
-        maxWidth: '360px',
+        maxWidth: '380px',
         borderRadius: '1.5rem',
-        border: '1px solid rgba(15, 23, 42, 0.12)',
-        boxShadow: '0 30px 80px rgba(15, 23, 42, 0.18)',
-        backgroundColor: '#ffffff',
+        border: `1px solid ${theme.containerBorder}`,
+        boxShadow: theme.containerShadow,
+        backgroundColor: theme.containerBg,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -145,9 +223,9 @@ export default function UnloquiaChatWidget({
       <header
         style={{
           padding: '1.25rem',
-          borderBottom: '1px solid rgba(15, 23, 42, 0.08)',
-          background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
-          color: '#ffffff',
+          borderBottom: `1px solid ${theme.headerDivider}`,
+          background: theme.headerBg,
+          color: theme.headerText,
         }}
       >
         <h2
@@ -160,7 +238,13 @@ export default function UnloquiaChatWidget({
         >
           {title}
         </h2>
-        <p style={{ margin: '0.25rem 0 0', opacity: 0.85, fontSize: '0.9rem' }}>
+        <p
+          style={{
+            margin: '0.25rem 0 0',
+            color: theme.headerCaption,
+            fontSize: '0.9rem',
+          }}
+        >
           Respondemos en minutos. Dejá tu mensaje.
         </p>
       </header>
@@ -168,12 +252,12 @@ export default function UnloquiaChatWidget({
       <div
         style={{
           flex: 1,
-          backgroundColor: '#f9fafb',
+          backgroundColor: theme.bodyBg,
           padding: '1rem',
           display: 'flex',
           flexDirection: 'column',
           gap: '0.75rem',
-          height: '320px',
+          height: '360px',
           overflowY: 'auto',
         }}
       >
@@ -181,7 +265,7 @@ export default function UnloquiaChatWidget({
           <div
             style={{
               textAlign: 'center',
-              color: '#6b7280',
+              color: theme.emptyState,
               fontSize: '0.95rem',
               marginTop: '2rem',
             }}
@@ -195,14 +279,20 @@ export default function UnloquiaChatWidget({
             key={message.id}
             style={{
               alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
-              backgroundColor: message.sender === 'user' ? '#2563eb' : '#ffffff',
-              color: message.sender === 'user' ? '#ffffff' : '#111827',
+              backgroundColor:
+                message.sender === 'user'
+                  ? theme.userBubbleBg
+                  : theme.botBubbleBg,
+              color:
+                message.sender === 'user'
+                  ? theme.userBubbleText
+                  : theme.botBubbleText,
               padding: '0.75rem 1rem',
               borderRadius: '1rem',
               boxShadow:
                 message.sender === 'user'
-                  ? '0 10px 20px rgba(37, 99, 235, 0.25)'
-                  : '0 10px 20px rgba(15, 23, 42, 0.08)',
+                  ? theme.bubbleShadowUser
+                  : theme.bubbleShadowBot,
               maxWidth: '80%',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
@@ -220,8 +310,8 @@ export default function UnloquiaChatWidget({
           display: 'flex',
           gap: '0.75rem',
           padding: '1rem',
-          borderTop: '1px solid #e5e7eb',
-          backgroundColor: '#ffffff',
+          borderTop: `1px solid ${theme.divider}`,
+          backgroundColor: theme.inputBg,
         }}
       >
         <input
@@ -232,10 +322,12 @@ export default function UnloquiaChatWidget({
           style={{
             flex: 1,
             borderRadius: '0.75rem',
-            border: '1px solid #d1d5db',
+            border: `1px solid ${theme.inputBorder}`,
             padding: '0.75rem 1rem',
             fontSize: '0.95rem',
             outline: 'none',
+            backgroundColor: theme.inputBg,
+            color: theme.inputText,
           }}
           disabled={loading || !userId}
         />
@@ -244,7 +336,9 @@ export default function UnloquiaChatWidget({
           disabled={!canSubmit}
           style={{
             borderRadius: '0.75rem',
-            backgroundColor: canSubmit ? '#2563eb' : '#9ca3af',
+            backgroundColor: canSubmit
+              ? theme.buttonActive
+              : theme.buttonDisabled,
             color: '#ffffff',
             border: 'none',
             padding: '0.75rem 1.25rem',
@@ -259,11 +353,12 @@ export default function UnloquiaChatWidget({
 
       {errorMessage && (
         <p
+          aria-live="polite"
           style={{
             margin: 0,
             padding: '0.75rem 1rem 1.25rem',
-            color: '#b91c1c',
-            backgroundColor: '#fef2f2',
+            color: theme.errorText,
+            backgroundColor: theme.errorBg,
             fontSize: '0.85rem',
           }}
         >
@@ -276,7 +371,7 @@ export default function UnloquiaChatWidget({
           style={{
             margin: 0,
             padding: '0 1rem 1rem',
-            color: '#6b7280',
+            color: theme.initializingText,
             fontSize: '0.8rem',
             textAlign: 'center',
           }}
