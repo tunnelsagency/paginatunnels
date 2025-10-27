@@ -31,6 +31,7 @@ type UnloquiaChatWidgetProps = {
 
 const USER_STORAGE_KEY = 'unloquia-chat-user-id';
 const POLL_INTERVAL_MS = 2000;
+const SIMPLE_MODE = true; // Ignorar 'user' del backend; sólo renderizar bot del servidor
 
 const toDisplayText = (value: unknown): string => {
   if (value == null) {
@@ -158,6 +159,7 @@ export default function UnloquiaChatWidget({
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
   const lastTimestampRef = useRef<string | null>(null);
+  const hydratedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!externalUserId) {
@@ -235,22 +237,38 @@ export default function UnloquiaChatWidget({
         }
       }
 
-      // Merge preservando orden de llegada (sin sort)
-      setMessages((prev) => {
-        const idIndex = new Map<string, number>();
-        const compositeIndex = new Map<string, number>();
-        const result = prev.slice();
+      const serverBots = SIMPLE_MODE
+        ? uniqueFromServer.filter((m) => m.sender === 'bot')
+        : uniqueFromServer;
 
-        for (let i = 0; i < prev.length; i++) {
-          const m = prev[i];
-          if (m.messageId) {
-            idIndex.set(m.messageId, i);
-          } else {
-            compositeIndex.set(`${m.sender}|${m.createdAt}|${m.text}`, i);
-          }
+      if (!hydratedRef.current) {
+        const initialSorted = serverBots.slice().sort(sortMessages);
+        const trimmed = initialSorted.slice(-50);
+        setMessages(trimmed);
+        const stamps = trimmed
+          .map((m) => m.createdAt)
+          .filter((s): s is string => typeof s === 'string' && s.length > 0);
+        if (stamps.length > 0) {
+          lastTimestampRef.current = stamps[stamps.length - 1];
         }
+        hydratedRef.current = true;
+      } else {
+        // Merge preservando orden de llegada (sin sort)
+        setMessages((prev) => {
+          const idIndex = new Map<string, number>();
+          const compositeIndex = new Map<string, number>();
+          const result = prev.slice();
 
-        for (const m of uniqueFromServer) {
+          for (let i = 0; i < prev.length; i++) {
+            const m = prev[i];
+            if (m.messageId) {
+              idIndex.set(m.messageId, i);
+            } else {
+              compositeIndex.set(`${m.sender}|${m.createdAt}|${m.text}`, i);
+            }
+          }
+
+        for (const m of serverBots) {
           if (m.messageId && idIndex.has(m.messageId)) {
             const idx = idIndex.get(m.messageId)!;
             result[idx] = m;
@@ -267,47 +285,50 @@ export default function UnloquiaChatWidget({
           }
         }
 
-        const stamps = result
-          .map((m) => m.createdAt)
-          .filter((s): s is string => typeof s === 'string' && s.length > 0);
-        if (stamps.length > 0) {
-          lastTimestampRef.current = stamps[stamps.length - 1];
-        }
+          const stamps = result
+            .map((m) => m.createdAt)
+            .filter((s): s is string => typeof s === 'string' && s.length > 0);
+          if (stamps.length > 0) {
+            lastTimestampRef.current = stamps[stamps.length - 1];
+          }
 
-        return result;
-      });
+          return result;
+        });
+      }
 
       // Remove only pending messages acknowledged by server (same messageId)
-      const serverMessageIds = new Set(
-        uniqueFromServer
-          .map((m) => m.messageId)
-          .filter((v): v is string => typeof v === 'string' && v.length > 0),
-      );
-      const serverUserEchoes = uniqueFromServer.filter(
-        (m) => m.sender === 'user' && typeof m.createdAt === 'string',
-      );
-      const serverBotReplies = uniqueFromServer.filter(
-        (m) => m.sender === 'bot' && typeof m.createdAt === 'string',
-      );
-      setPendingMessages((prev) =>
-        prev.filter((pendingMsg) => {
-          if (pendingMsg.messageId && serverMessageIds.has(pendingMsg.messageId)) {
-            return false;
-          }
-          const pTime = Date.parse(pendingMsg.createdAt);
-          const echoed = serverUserEchoes.some((m) => {
-            if (m.text !== pendingMsg.text) return false;
-            const t = Date.parse(m.createdAt);
-            return Number.isFinite(pTime) && Number.isFinite(t) && Math.abs(t - pTime) <= 30_000;
-          });
-          if (echoed) return false;
-          const replied = serverBotReplies.some((m) => {
-            const t = Date.parse(m.createdAt);
-            return Number.isFinite(pTime) && Number.isFinite(t) && t >= pTime - 5_000;
-          });
-          return !replied;
-        }),
-      );
+      if (!SIMPLE_MODE) {
+        const serverMessageIds = new Set(
+          uniqueFromServer
+            .map((m) => m.messageId)
+            .filter((v): v is string => typeof v === 'string' && v.length > 0),
+        );
+        const serverUserEchoes = uniqueFromServer.filter(
+          (m) => m.sender === 'user' && typeof m.createdAt === 'string',
+        );
+        const serverBotReplies = uniqueFromServer.filter(
+          (m) => m.sender === 'bot' && typeof m.createdAt === 'string',
+        );
+        setPendingMessages((prev) =>
+          prev.filter((pendingMsg) => {
+            if (pendingMsg.messageId && serverMessageIds.has(pendingMsg.messageId)) {
+              return false;
+            }
+            const pTime = Date.parse(pendingMsg.createdAt);
+            const echoed = serverUserEchoes.some((m) => {
+              if (m.text !== pendingMsg.text) return false;
+              const t = Date.parse(m.createdAt);
+              return Number.isFinite(pTime) && Number.isFinite(t) && Math.abs(t - pTime) <= 30_000;
+            });
+            if (echoed) return false;
+            const replied = serverBotReplies.some((m) => {
+              const t = Date.parse(m.createdAt);
+              return Number.isFinite(pTime) && Number.isFinite(t) && t >= pTime - 5_000;
+            });
+            return !replied;
+          }),
+        );
+      }
     } catch (error) {
       console.error('Failed to fetch landing messages', error);
     }
@@ -400,8 +421,13 @@ export default function UnloquiaChatWidget({
         );
         return;
       }
-
-      await fetchMessages();
+      if (SIMPLE_MODE) {
+        setPendingMessages((prev) =>
+          prev.map((m) => (m.messageId === messageId ? { ...m, pending: false } : m)),
+        );
+      } else {
+        await fetchMessages();
+      }
     } catch (error) {
       console.error('Failed to send landing message', error);
       setPendingMessages((prev) =>
