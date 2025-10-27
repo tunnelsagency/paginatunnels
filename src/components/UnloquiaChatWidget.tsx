@@ -19,6 +19,10 @@ type Message = {
   pending?: boolean;
 };
 
+type MessagesPayload = {
+  messages?: unknown[];
+};
+
 type UnloquiaChatWidgetProps = {
   clientId: string;
   userId?: string;
@@ -154,6 +158,7 @@ export default function UnloquiaChatWidget({
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
   const previousBotCountRef = useRef(0);
   const initialisedViewRef = useRef(false);
+  const lastTimestampRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!externalUserId) {
@@ -225,6 +230,9 @@ export default function UnloquiaChatWidget({
         sessionId: userId,
         limit: "200",
       });
+      if (lastTimestampRef.current) {
+        params.set("since", lastTimestampRef.current);
+      }
 
       const response = await fetch(`/api/unloquia-messages?${params.toString()}`, {
         cache: "no-store",
@@ -240,20 +248,81 @@ export default function UnloquiaChatWidget({
         return;
       }
 
-      const payload = await response.json().catch(() => ({}));
-      const rows = Array.isArray(payload?.messages) ? payload.messages : [];
+      const payload = (await response
+        .json()
+        .catch(() => ({}))) as MessagesPayload;
+      const rows: unknown[] = Array.isArray(payload?.messages)
+        ? payload.messages
+        : [];
       const normalised = rows
-        .map(normaliseRow)
+        .map((row, idx) => normaliseRow(row as any, idx))
         .filter((msg): msg is Message => Boolean(msg))
         .sort(sortMessages);
-      const serverKeys = new Set(normalised.map(createMessageKey));
 
-      setMessages(normalised);
+      // Dedupe only by messageId when available
+      const seenIds = new Set<string>();
+      const seenComposite = new Set<string>();
+      const uniqueFromServer: Message[] = [];
+      for (const m of normalised) {
+        if (m.messageId) {
+          if (!seenIds.has(m.messageId)) {
+            seenIds.add(m.messageId);
+            uniqueFromServer.push(m);
+          }
+        } else {
+          const k = `${m.sender}|${m.createdAt}|${m.text}`;
+          if (!seenComposite.has(k)) {
+            seenComposite.add(k);
+            uniqueFromServer.push(m);
+          }
+        }
+      }
+
+      // Merge with existing messages by messageId/composite
+      setMessages((prev) => {
+        const byId = new Map<string, Message>();
+        const compositeSet = new Set<string>();
+        const out: Message[] = [];
+
+        const add = (m: Message) => {
+          if (m.messageId) {
+            byId.set(m.messageId, m);
+          } else {
+            const k = `${m.sender}|${m.createdAt}|${m.text}`;
+            if (!compositeSet.has(k)) {
+              compositeSet.add(k);
+              out.push(m);
+            }
+          }
+        };
+
+        for (const m of prev) add(m);
+        for (const m of uniqueFromServer) add(m);
+
+        // Reconstruct final list from maps + out, then sort
+        const merged = [...out, ...Array.from(byId.values())].sort(sortMessages);
+
+        // Update since cursor with newest createdAt
+        const stamps = merged
+          .map((m) => m.createdAt)
+          .filter((s): s is string => typeof s === "string" && s.length > 0);
+        if (stamps.length > 0) {
+          lastTimestampRef.current = stamps[stamps.length - 1];
+        }
+
+        return merged;
+      });
+
+      // Remove only pending messages that have been acknowledged by server (same messageId)
+      const serverMessageIds = new Set(
+        uniqueFromServer
+          .map((m) => m.messageId)
+          .filter((v): v is string => typeof v === "string" && v.length > 0),
+      );
       setPendingMessages((prev) =>
-        prev.filter((pendingMsg) => {
-          const key = createMessageKey(pendingMsg);
-          return !serverKeys.has(key);
-        }),
+        prev.filter((pendingMsg) =>
+          pendingMsg.messageId ? !serverMessageIds.has(pendingMsg.messageId) : true,
+        ),
       );
     } catch (error) {
       console.error("Failed to fetch landing messages", error);
@@ -629,7 +698,7 @@ export default function UnloquiaChatWidget({
 
               {displayMessages.map((message) => (
                 <div
-                  key={createMessageKey(message)}
+                  key={message.id}
                   style={{
                     alignSelf:
                       message.sender === "user" ? "flex-end" : "flex-start",
