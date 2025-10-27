@@ -55,9 +55,15 @@ const toDisplayText = (value: unknown): string => {
   }
 };
 
-const messageKey = (message: Message) =>
-  message.messageId ??
-  `${message.sender}:${message.createdAt ?? message.id}`;
+const messageKey = (message: Message) => {
+  if (message.messageId) {
+    return `id:${message.messageId}`;
+  }
+  if (message.createdAt) {
+    return `${message.sender}:${message.createdAt}`;
+  }
+  return `${message.sender}:${message.id}`;
+};
 
 const compareMessages = (a: Message, b: Message) => {
   const parsedA = a.createdAt ? Date.parse(a.createdAt) : Number.NaN;
@@ -134,59 +140,43 @@ export default function UnloquiaChatWidget({
   );
 
   const mergeServerMessages = useCallback((incoming: Message[]) => {
-    if (incoming.length === 0) {
-      return;
-    }
-
     setMessages((prev) => {
+      if (incoming.length === 0) {
+        return prev;
+      }
+
       const pending = prev.filter((msg) => msg.pending);
-      const nonPending = prev.filter((msg) => !msg.pending);
 
-      const incomingKeys = new Set(incoming.map(messageKey));
-      const filteredPending = pending.filter((pendingMsg) => {
-        if (pendingMsg.messageId) {
-          return !incoming.some(
-            (serverMsg) => serverMsg.messageId === pendingMsg.messageId,
-          );
-        }
+      const serverSeen = new Set<string>();
+      const serverMessages: Message[] = [];
+      const sortedIncoming = [...incoming].sort(compareMessages);
 
-        const key = messageKey(pendingMsg);
-        if (incomingKeys.has(key)) {
-          return false;
-        }
-
-        return !incoming.some(
-          (serverMsg) =>
-            serverMsg.sender === pendingMsg.sender &&
-            serverMsg.text === pendingMsg.text,
-        );
-      });
-
-      const next: Message[] = [];
-      const seen = new Set<string>();
-
-      const pushUnique = (message: Message) => {
+      for (const message of sortedIncoming) {
         const key = messageKey(message);
+        if (serverSeen.has(key)) {
+          continue;
+        }
+        serverSeen.add(key);
+        serverMessages.push({ ...message, pending: false });
+      }
+
+      const next: Message[] = [...serverMessages];
+      const seen = new Set(serverMessages.map((msg) => messageKey(msg)));
+
+      for (const pendingMsg of pending) {
+        const key = messageKey(pendingMsg);
         if (seen.has(key)) {
-          return;
+          continue;
+        }
+        if (
+          pendingMsg.messageId &&
+          serverMessages.some((serverMsg) => serverMsg.messageId === pendingMsg.messageId)
+        ) {
+          continue;
         }
         seen.add(key);
-        next.push(message);
-      };
-
-      nonPending.forEach((message) => {
-        if (!incomingKeys.has(messageKey(message))) {
-          pushUnique(message);
-        }
-      });
-
-      filteredPending.forEach((message) => {
-        const key = messageKey(message);
-        const shouldKeepPending = !incomingKeys.has(key);
-        pushUnique({ ...message, pending: shouldKeepPending });
-      });
-
-      incoming.forEach((message) => pushUnique({ ...message, pending: false }));
+        next.push(pendingMsg);
+      }
 
       next.sort(compareMessages);
       const trimmed = next.slice(-200);
