@@ -334,7 +334,14 @@ export default function UnloquiaChatWidget({
             const roleValue =
               typeof row.role === "string" ? row.role.toLowerCase() : "";
             const sender: "user" | "bot" = roleValue === "bot" ? "bot" : "user";
-            const text = toDisplayText(row.text).trim();
+            const rawText =
+              row.text ??
+              row.message ??
+              (typeof row.content === "string"
+                ? row.content
+                : row.content?.text) ??
+              (typeof row.body === "string" ? row.body : row.body?.text);
+            const text = toDisplayText(rawText).trim();
             const createdAt =
               typeof row.created_at === "string" ? row.created_at : undefined;
 
