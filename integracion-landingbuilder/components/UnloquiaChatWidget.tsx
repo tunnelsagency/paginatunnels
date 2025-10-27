@@ -238,7 +238,9 @@ export default function UnloquiaChatWidget({
 
         const newestWithTimestamp = normalised
           .map((msg: Message) => msg.createdAt)
-          .filter((value): value is string => Boolean(value));
+          .filter((value: string | undefined | null): value is string =>
+            Boolean(value),
+          );
 
         if (newestWithTimestamp.length > 0) {
           const newest = newestWithTimestamp[newestWithTimestamp.length - 1];
