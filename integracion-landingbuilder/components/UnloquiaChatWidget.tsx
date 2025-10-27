@@ -1,11 +1,20 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 type Message = {
   id: string;
   sender: 'user' | 'bot';
   text: string;
+  createdAt?: string;
+  pending?: boolean;
 };
 
 type UnloquiaChatWidgetProps = {
@@ -16,6 +25,7 @@ type UnloquiaChatWidgetProps = {
 };
 
 const USER_STORAGE_KEY = 'unloquia-chat-user-id';
+const POLL_INTERVAL_MS = 2000;
 
 const generateId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -23,6 +33,51 @@ const generateId = () => {
   }
 
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const toDisplayText = (value: unknown): string => {
+  if (value == null) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch (error) {
+    console.error('Failed to stringify message payload', error);
+    return '';
+  }
+};
+
+const messageKey = (message: Message) =>
+  `${message.sender}:${message.createdAt ?? message.id}`;
+
+const compareMessages = (a: Message, b: Message) => {
+  const parsedA = a.createdAt ? Date.parse(a.createdAt) : Number.NaN;
+  const parsedB = b.createdAt ? Date.parse(b.createdAt) : Number.NaN;
+  const hasA = !Number.isNaN(parsedA);
+  const hasB = !Number.isNaN(parsedB);
+
+  if (hasA && hasB) {
+    if (parsedA !== parsedB) {
+      return parsedA - parsedB;
+    }
+    return a.id.localeCompare(b.id);
+  }
+
+  if (hasA) {
+    return -1;
+  }
+
+  if (hasB) {
+    return 1;
+  }
+
+  return a.id.localeCompare(b.id);
 };
 
 export default function UnloquiaChatWidget({
@@ -37,20 +92,28 @@ export default function UnloquiaChatWidget({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
 
+  const seenMessagesRef = useRef<Set<string>>(new Set());
+  const lastMessageAtRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (externalUserId) {
       setStoredUserId(externalUserId);
       return;
     }
 
-    const existing = window.localStorage.getItem(USER_STORAGE_KEY);
+    const existing = typeof window !== 'undefined'
+      ? window.localStorage.getItem(USER_STORAGE_KEY)
+      : null;
+
     if (existing) {
       setStoredUserId(existing);
       return;
     }
 
     const generated = generateId();
-    window.localStorage.setItem(USER_STORAGE_KEY, generated);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(USER_STORAGE_KEY, generated);
+    }
     setStoredUserId(generated);
   }, [externalUserId]);
 
@@ -58,6 +121,181 @@ export default function UnloquiaChatWidget({
     () => externalUserId ?? storedUserId,
     [externalUserId, storedUserId],
   );
+
+  const mergeServerMessages = useCallback((incoming: Message[]) => {
+    if (incoming.length === 0) {
+      return;
+    }
+
+    setMessages((prev) => {
+      const pending = prev.filter((msg) => msg.pending);
+      const nonPending = prev.filter((msg) => !msg.pending);
+
+      const incomingKeys = new Set(incoming.map(messageKey));
+      const filteredPending = pending.filter(
+        (pendingMsg) =>
+          !incoming.some(
+            (serverMsg) =>
+              serverMsg.sender === pendingMsg.sender &&
+              serverMsg.text === pendingMsg.text,
+          ),
+      );
+
+      const next: Message[] = [];
+      const seen = new Set<string>();
+
+      const pushUnique = (message: Message) => {
+        const key = messageKey(message);
+        if (seen.has(key)) {
+          return;
+        }
+        seen.add(key);
+        next.push(message);
+      };
+
+      nonPending.forEach((message) => {
+        if (!incomingKeys.has(messageKey(message))) {
+          pushUnique(message);
+        }
+      });
+
+      filteredPending.forEach((message) => {
+        const key = messageKey(message);
+        const shouldKeepPending = !incomingKeys.has(key);
+        pushUnique({ ...message, pending: shouldKeepPending });
+      });
+
+      incoming.forEach((message) => pushUnique({ ...message, pending: false }));
+
+      next.sort(compareMessages);
+      const trimmed = next.slice(-200);
+      seenMessagesRef.current = new Set(trimmed.map(messageKey));
+
+      return trimmed;
+    });
+  }, []);
+
+  const fetchLatestMessages = useCallback(
+    async (options?: { resetSince?: boolean }) => {
+      if (!clientId || !userId) {
+        return;
+      }
+
+      const params = new URLSearchParams({
+        clientId,
+        sessionId: userId,
+        limit: '200',
+      });
+
+      if (!options?.resetSince && lastMessageAtRef.current) {
+        params.set('since', lastMessageAtRef.current);
+      }
+
+      try {
+        const response = await fetch(`/api/unloquia-messages?${params.toString()}`, {
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          const errorPayload = await response.text().catch(() => '');
+          console.error('Failed to fetch landing messages', response.status, errorPayload);
+          return;
+        }
+
+        const payload = await response.json().catch(() => ({}));
+        const rows = Array.isArray(payload?.messages) ? payload.messages : [];
+
+        const normalised = rows
+          .map((row: any): Message | null => {
+            if (!row || typeof row !== 'object') {
+              return null;
+            }
+
+            const roleValue = typeof row.role === 'string' ? row.role.toLowerCase() : '';
+            const sender: 'user' | 'bot' = roleValue === 'bot' ? 'bot' : 'user';
+            const text = toDisplayText(row.text).trim();
+            const createdAt = typeof row.created_at === 'string' ? row.created_at : undefined;
+
+            if (!text) {
+              return null;
+            }
+
+            const id = createdAt ? `${sender}-${createdAt}` : `${sender}-${generateId()}`;
+
+            return {
+              id,
+              sender,
+              text,
+              createdAt,
+              pending: false,
+            };
+          })
+          .filter((msg): msg is Message => Boolean(msg));
+
+        if (normalised.length === 0) {
+          return;
+        }
+
+        const newestWithTimestamp = normalised
+          .map((msg) => msg.createdAt)
+          .filter((value): value is string => Boolean(value));
+
+        if (newestWithTimestamp.length > 0) {
+          const newest = newestWithTimestamp[newestWithTimestamp.length - 1];
+          if (newest) {
+            const previous = lastMessageAtRef.current ? Date.parse(lastMessageAtRef.current) : null;
+            const candidate = Date.parse(newest);
+            if (!previous || (candidate && candidate > previous)) {
+              lastMessageAtRef.current = newest;
+            }
+          }
+        }
+
+        mergeServerMessages(normalised);
+      } catch (error) {
+        console.error('Failed to fetch landing messages', error);
+      }
+    },
+    [clientId, userId, mergeServerMessages],
+  );
+
+  useEffect(() => {
+    seenMessagesRef.current.clear();
+    lastMessageAtRef.current = null;
+    setMessages([]);
+
+    if (!clientId || !userId) {
+      return;
+    }
+
+    let canceled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const poll = async (resetSince: boolean) => {
+      if (canceled) {
+        return;
+      }
+
+      await fetchLatestMessages({ resetSince });
+
+      if (canceled) {
+        return;
+      }
+
+      timer = setTimeout(() => {
+        void poll(false);
+      }, POLL_INTERVAL_MS);
+    };
+
+    void poll(true);
+
+    return () => {
+      canceled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [clientId, userId, fetchLatestMessages]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,11 +306,14 @@ export default function UnloquiaChatWidget({
 
     const trimmed = input.trim();
     const messageId = generateId();
+    const createdAt = new Date().toISOString();
 
     const userMessage: Message = {
       id: messageId,
       sender: 'user',
       text: trimmed,
+      createdAt,
+      pending: true,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -97,29 +338,16 @@ export default function UnloquiaChatWidget({
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+        setMessages((prev) => prev.filter((msg) => !(msg.pending && msg.id === messageId)));
         setErrorMessage(
           data?.error ?? 'No pudimos enviar tu mensaje. Intentá nuevamente.',
         );
         return;
       }
 
-      // Execute endpoint responde 202 { status: 'queued', job_id: '...' }.
-      // No hay respuesta sincrónica del bot. Mostramos confirmación amigable.
-      const confirmation =
-        typeof data?.message === 'string'
-          ? data.message
-          : data?.status === 'queued'
-          ? '¡Gracias! Tu mensaje fue enviado. Te responderemos a la brevedad.'
-          : 'Mensaje enviado.';
-
-      const botMessage: Message = {
-        id: generateId(),
-        sender: 'bot',
-        text: confirmation,
-      };
-
-      setMessages((prev) => [...prev, botMessage]);
+      await fetchLatestMessages();
     } catch (error) {
+      setMessages((prev) => prev.filter((msg) => !(msg.pending && msg.id === messageId)));
       setErrorMessage(
         error instanceof Error ? error.message : 'Error de red inesperado.',
       );
@@ -199,9 +427,22 @@ export default function UnloquiaChatWidget({
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
               fontSize: '0.95rem',
+              opacity: message.pending ? 0.7 : 1,
             }}
           >
             {message.text}
+            {message.pending && (
+              <span
+                style={{
+                  display: 'block',
+                  marginTop: '0.4rem',
+                  fontSize: '0.75rem',
+                  opacity: 0.8,
+                }}
+              >
+                Enviando…
+              </span>
+            )}
           </div>
         ))}
       </div>

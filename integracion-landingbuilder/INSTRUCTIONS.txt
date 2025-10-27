@@ -3,30 +3,36 @@ Unloquia Landing Integration Pack (Next.js App Router + Vercel)
 
 Objetivo
 --------
-Paquete listo para copiar en una landing Next.js (App Router) desplegada en Vercel. Expone un widget de chat que se comunica con la API de Unloquia mediante un endpoint serverless protegido con `X-Landing-Secret`.
+Paquete listo para copiar en una landing Next.js (App Router) desplegada en Vercel. Expone un widget de chat que se comunica con la API de Unloquia mediante dos endpoints serverless protegidos con `X-Landing-Secret`:
+- `POST /api/unloquia-proxy` → reenvía a `/api/v1/workflows/execute/`.
+- `GET /api/unloquia-messages` → consulta `/api/v1/landing/messages/` para traer respuestas.
 
 Pasos para Codex o cualquier agente que trabaje sobre la landing
 ----------------------------------------------------------------
-1. Copiar la carpeta `app/` y `components/` incluidas aquí en la raíz del proyecto Next.js (App Router).
-   - Si el proyecto ya tiene una carpeta `app/`, fusionar el contenido asegurando que `app/api/unloquia-proxy/route.ts` quede dentro de `app/api/`.
-   - Si existe un `components/`, añadir `components/UnloquiaChatWidget.tsx`.
-2. Editar `app/page.tsx` (o el archivo de página que corresponda) e importar el widget:
+1. Copiar las carpetas `app/` y `components/` incluidas aquí en la raíz del proyecto Next.js (App Router).
+   - Asegurarse de que se incluyan ambas rutas serverless: `app/api/unloquia-proxy/route.ts` y `app/api/unloquia-messages/route.ts`.
+   - Si el proyecto ya tiene una carpeta `app/`, fusionar el contenido manteniendo `app/api/...` dentro de `app/api/`.
+   - Si existe un `components/`, añadir `components/UnloquiaChatWidget.tsx` sin reemplazar componentes existentes.
+2. Editar `app/page.tsx` (o la página que corresponda) e importar el widget:
       `import UnloquiaChatWidget from '@/components/UnloquiaChatWidget';`
    Reemplazar `CLIENT_ID` por el identificador asignado al cliente en Unloquia.
-3. Confirmar que en el repositorio no se agregan dependencias externas. El widget usa únicamente React, fetch nativo y estilos inline.
-4. Configurar la variable de entorno `UNLOQUIA_LANDING_SECRET` (es el `landing_ingest_secret` guardado en `messaging_channel_configs.credentials`).
+3. Confirmar que no se agregan dependencias externas. El widget usa sólo React, `fetch` nativo y estilos inline.
+4. Configurar la variable de entorno `UNLOQUIA_LANDING_SECRET` (es el `landing_ingest_secret` guardado en `messaging_channel_configs.credentials`). Ambos endpoints la leen desde `process.env`.
    - En local: agregarla en `.env.local` (`UNLOQUIA_LANDING_SECRET=...`).
    - En Vercel: Project → Settings → Environment Variables → `Add`. Nombre `UNLOQUIA_LANDING_SECRET`, scope `Production` (y `Preview/Development` si aplica). Redeploy con `vercel deploy` o desde la UI.
 5. Verificar localmente con `vercel dev` o `npm run dev`:
-   - Abrir la landing, enviar un mensaje. El widget llamará a `/api/unloquia-proxy` que reenvía a `https://api.unloquia.com/api/v1/workflows/execute/` con `channel: "landing"` y el payload completo que espera Django.
-   - Confirmar que la respuesta JSON se refleja en el chat. Ante errores, revisar la consola y los logs del endpoint serverless.
-6. Antes de deploy, asegurar que `clientId`, `messageId`, `userId` y `text` se están enviando correctamente desde el widget (ya viene configurado para generar IDs y almacenar `userId` en `localStorage`).
-7. Desplegar con `vercel deploy`. No se requieren pasos adicionales: el endpoint y el widget quedan listos para producción.
+   - Abrir la landing, enviar un mensaje. El widget llamará a `/api/unloquia-proxy` que reenvía a `https://api.unloquia.com/api/v1/workflows/execute/` con `channel: "landing"` y el payload que espera Django.
+   - Revisar la pestaña Network: el polling de `/api/unloquia-messages?clientId=...&sessionId=...` debe devolver `200` y un arreglo `messages`. Si aún no hay respuesta del bot, el array llega vacío.
+   - Confirmar que las respuestas reales del bot aparecen en la interfaz al cabo de unos segundos.
+6. Antes del deploy, asegurar que `clientId`, `messageId`, `userId` y `text` se envían correctamente desde el widget (ya viene configurado para generar IDs y almacenar `userId` en `localStorage`).
+   - El `sessionId` enviado al backend coincide con el `userId` (por defecto `contact.wa_id`).
+7. Desplegar con `vercel deploy`. No se requieren pasos adicionales: el endpoint de envío, el de lectura y el widget quedan listos para producción.
 
 Notas adicionales
 -----------------
 - Este flujo usa el `landing_ingest_secret` del canal landing, **no** el token de la tabla `landing_access_tokens` (ese token sólo aplica al Landing Builder externo).
-- `messageId` y `userId` se mapearon al formato que espera `WorkflowExecuteView` (`message.message_id` y `message.contact.wa_id`).
+- `unloquia-messages` devuelve la conversación directamente desde Supabase (`chat_messages`). No expone claves ni requiere que el frontend conozca Supabase.
+- El widget realiza polling cada ~2 segundos (configurable dentro del componente) y mergea mensajes por `created_at`. Ajustar el intervalo si se necesita menor latencia.
 - Se puede personalizar el look & feel modificando estilos inline o adaptándolo a Tailwind si el proyecto ya lo usa.
-- Para integraciones adicionales (por ejemplo capturar los mensajes enviados en el backend propio), se recomienda hacerlo dentro del endpoint `/api/unloquia-proxy` antes de reenviar al upstream.
+- Para integraciones adicionales (p. ej. guardar mensajes en un backend propio) se recomienda hacerlo dentro del endpoint `/api/unloquia-proxy` antes de reenviar al upstream.
 - Mantener `UNLOQUIA_LANDING_SECRET` fuera del bundle del front; nunca exponerlo en la landing ni en scripts públicos.
