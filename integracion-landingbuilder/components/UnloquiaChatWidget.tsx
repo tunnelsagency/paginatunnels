@@ -230,7 +230,7 @@ export default function UnloquiaChatWidget({
               pending: false,
             };
           })
-          .filter((msg): msg is Message => Boolean(msg));
+          .filter((msg: Message | null): msg is Message => Boolean(msg));
 
         if (normalised.length === 0) {
           return;

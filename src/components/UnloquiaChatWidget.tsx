@@ -317,7 +317,7 @@ export default function UnloquiaChatWidget({
               pending: false,
             };
           })
-          .filter((msg): msg is Message => Boolean(msg));
+          .filter((msg: Message | null): msg is Message => Boolean(msg));
 
         if (normalised.length === 0) {
           return;
@@ -454,8 +454,8 @@ export default function UnloquiaChatWidget({
   return (
     <div
       style={{
-        width: "100%",
-        maxWidth: "380px",
+        width: "min(360px, calc(100vw - 2.5rem))",
+        minWidth: "260px",
         borderRadius: "1.5rem",
         border: `1px solid ${theme.containerBorder}`,
         boxShadow: theme.containerShadow,
@@ -488,6 +488,7 @@ export default function UnloquiaChatWidget({
             margin: "0.25rem 0 0",
             color: theme.headerCaption,
             fontSize: "0.9rem",
+            lineHeight: 1.4,
           }}
         >
           Respondemos en minutos. Dejá tu mensaje.
@@ -502,7 +503,7 @@ export default function UnloquiaChatWidget({
           display: "flex",
           flexDirection: "column",
           gap: "0.75rem",
-          height: "360px",
+          height: "min(340px, 48vh)",
           overflowY: "auto",
         }}
       >
@@ -511,11 +512,12 @@ export default function UnloquiaChatWidget({
             style={{
               textAlign: "center",
               color: theme.emptyState,
-              fontSize: "0.95rem",
+              fontSize: "0.9rem",
               marginTop: "2rem",
+              lineHeight: 1.45,
             }}
           >
-            ¡Hola! ¿En qué podemos ayudarte hoy?
+            Contanos en qué podemos ayudarte y te respondemos enseguida.
           </div>
         )}
 
@@ -533,6 +535,7 @@ export default function UnloquiaChatWidget({
                   ? theme.userBubbleText
                   : theme.botBubbleText,
               padding: "0.75rem 1rem",
+              lineHeight: 1.4,
               borderRadius: "1rem",
               boxShadow:
                 message.sender === "user"
