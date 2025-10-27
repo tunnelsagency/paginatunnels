@@ -102,11 +102,7 @@ export default function Home() {
         </main>
         <Footer />
       </div>
-      {clientId ? (
-        <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-[360px] -translate-x-1/2 sm:left-auto sm:right-4 sm:translate-x-0 md:bottom-6 md:right-6">
-          <UnloquiaChatWidget clientId={clientId} />
-        </div>
-      ) : null}
+      {clientId ? <UnloquiaChatWidget clientId={clientId} /> : null}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Loader2, MessageCircle, Sparkles, X } from "lucide-react";
 
 type Message = {
   id: string;
@@ -92,6 +93,12 @@ export default function UnloquiaChatWidget({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const messageContainerRef = useRef<HTMLDivElement | null>(null);
+  const initialisedViewRef = useRef(false);
+  const previousBotCountRef = useRef(0);
 
   const seenMessagesRef = useRef<Set<string>>(new Set());
   const lastMessageAtRef = useRef<string | null>(null);
@@ -125,18 +132,48 @@ export default function UnloquiaChatWidget({
     }
 
     const root = document.documentElement;
-    const update = () => setIsDarkMode(root.classList.contains("dark"));
-    update();
+    const updateTheme = () => setIsDarkMode(root.classList.contains("dark"));
+    updateTheme();
 
-    if (typeof MutationObserver === "undefined") {
-      return;
-    }
+    const observer =
+      typeof MutationObserver !== "undefined"
+        ? new MutationObserver(updateTheme)
+        : null;
 
-    const observer = new MutationObserver(update);
-    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    observer?.observe(root, { attributes: true, attributeFilter: ["class"] });
 
-    return () => observer.disconnect();
+    const updateViewport = () => {
+      if (typeof window === "undefined") return;
+      const matches = window.matchMedia("(max-width: 640px)").matches;
+      setIsMobileView(matches);
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateViewport);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!initialisedViewRef.current) {
+      setIsOpen(!isMobileView);
+      initialisedViewRef.current = true;
+    }
+  }, [isMobileView]);
+
+  useEffect(() => {
+    if (isMobileView) {
+      document.body.style.overflow = isOpen ? "hidden" : "";
+    }
+    return () => {
+      if (isMobileView) {
+        document.body.style.overflow = "";
+      }
+    };
+  }, [isMobileView, isOpen]);
 
   const userId = useMemo(
     () => externalUserId ?? storedUserId,
@@ -388,6 +425,15 @@ export default function UnloquiaChatWidget({
     };
   }, [clientId, userId, fetchLatestMessages]);
 
+  const suggestions = useMemo(
+    () => [
+      "Quiero automatizar mis leads",
+      "¿Cómo integran el bot con WhatsApp?",
+      "Necesito una demo personalizada",
+    ],
+    [],
+  );
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -453,195 +499,420 @@ export default function UnloquiaChatWidget({
 
   const canSubmit = Boolean(input.trim() && userId && !loading);
 
-  return (
-    <div
-      style={{
-        width: "min(360px, calc(100vw - 2.5rem))",
-        minWidth: "260px",
-        borderRadius: "1.5rem",
-        border: `1px solid ${theme.containerBorder}`,
-        boxShadow: theme.containerShadow,
-        backgroundColor: theme.containerBg,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      <header
-        style={{
-          padding: "1.25rem",
-          borderBottom: `1px solid ${theme.headerDivider}`,
-          background: theme.headerBg,
-          color: theme.headerText,
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "1.35rem",
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {title}
-        </h2>
-        <p
-          style={{
-            margin: "0.25rem 0 0",
-            color: theme.headerCaption,
-            fontSize: "0.9rem",
-            lineHeight: 1.4,
-          }}
-        >
-          Respondemos en minutos. Dejá tu mensaje.
-        </p>
-      </header>
+  useEffect(() => {
+    if (messages.length === 0) {
+      return;
+    }
 
+    const botMessages = messages.filter(
+      (message) => message.sender === "bot" && !message.pending,
+    );
+
+    if (!isOpen) {
+      const delta = botMessages.length - previousBotCountRef.current;
+      if (delta > 0) {
+        setUnreadCount((prev) => prev + delta);
+      }
+    } else {
+      setUnreadCount(0);
+    }
+
+    previousBotCountRef.current = botMessages.length;
+
+    if (isOpen && messageContainerRef.current) {
+      requestAnimationFrame(() => {
+        messageContainerRef.current?.lastElementChild?.scrollIntoView({
+          block: "end",
+          behavior: "smooth",
+        });
+      });
+    }
+  }, [messages, isOpen]);
+
+  const toggleWidget = () => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setUnreadCount(0);
+      }
+      return next;
+    });
+  };
+
+  const handleSuggestionClick = (value: string) => {
+    setInput(value);
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+  };
+
+  const panelHeight = isMobileView ? "min(72vh, 560px)" : "520px";
+  const panelWidth = isMobileView
+    ? "min(100vw - 1.5rem, 420px)"
+    : "min(400px, calc(100vw - 2.5rem))";
+
+  const panelStyle: React.CSSProperties = {
+    width: panelWidth,
+    height: panelHeight,
+    borderRadius: isMobileView ? "1.75rem" : "1.5rem",
+    border: `1px solid ${theme.containerBorder}`,
+    boxShadow: isMobileView
+      ? "0 28px 120px rgba(15, 23, 42, 0.38)"
+      : theme.containerShadow,
+    backgroundColor: theme.containerBg,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    transition: "opacity 0.25s ease, transform 0.25s ease",
+    opacity: isOpen ? 1 : 0,
+    transform: isOpen ? "translateY(0) scale(1)" : "translateY(16px) scale(0.95)",
+    pointerEvents: isOpen ? "auto" : "none",
+  };
+
+  return (
+    <>
+      {isMobileView && (
+        <div
+          onClick={() => setIsOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.45)",
+            backdropFilter: "blur(6px)",
+            opacity: isOpen ? 1 : 0,
+            transition: "opacity 0.25s ease",
+            pointerEvents: isOpen ? "auto" : "none",
+            zIndex: 55,
+          }}
+        />
+      )}
       <div
         style={{
-          flex: 1,
-          backgroundColor: theme.bodyBg,
-          padding: "1rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.75rem",
-          height: "min(340px, 48vh)",
-          overflowY: "auto",
+          position: "fixed",
+          bottom: isMobileView ? "1rem" : "1.5rem",
+          right: isMobileView ? "auto" : "1.5rem",
+          left: isMobileView ? "50%" : "auto",
+          transform: isMobileView ? "translateX(-50%)" : "none",
+          zIndex: 60,
+          pointerEvents: "none",
         }}
       >
-        {messages.length === 0 && (
-          <div
-            style={{
-              textAlign: "center",
-              color: theme.emptyState,
-              fontSize: "0.9rem",
-              marginTop: "2rem",
-              lineHeight: 1.45,
-            }}
-          >
-            Contanos en qué podemos ayudarte y te respondemos enseguida.
-          </div>
-        )}
+        <div
+          style={{
+            display: "flex",
+            pointerEvents: "auto",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: "0.75rem",
+          }}
+        >
+          <div style={panelStyle}>
+            <header
+              style={{
+                padding: "1.25rem",
+                paddingBottom: "1rem",
+                borderBottom: `1px solid ${theme.headerDivider}`,
+                background: theme.headerBg,
+                color: theme.headerText,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.75rem",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    opacity: 0.85,
+                  }}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Siempre online
+                </div>
+                <h2
+                  style={{
+                    margin: "0.35rem 0 0",
+                    fontSize: "1.35rem",
+                    fontWeight: 600,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {title}
+                </h2>
+                <p
+                  style={{
+                    margin: "0.35rem 0 0",
+                    color: theme.headerCaption,
+                    fontSize: "0.9rem",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Nuestro equipo responde en minutos.
+                </p>
+              </div>
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            </header>
 
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            style={{
-              alignSelf: message.sender === "user" ? "flex-end" : "flex-start",
-              backgroundColor:
-                message.sender === "user"
-                  ? theme.userBubbleBg
-                  : theme.botBubbleBg,
-              color:
-                message.sender === "user"
-                  ? theme.userBubbleText
-                  : theme.botBubbleText,
-              padding: "0.75rem 1rem",
-              lineHeight: 1.4,
-              borderRadius: "1rem",
-              boxShadow:
-                message.sender === "user"
-                  ? theme.bubbleShadowUser
-                  : theme.bubbleShadowBot,
-              maxWidth: "80%",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              fontSize: "0.95rem",
-              opacity: message.pending ? 0.75 : 1,
-            }}
-          >
-            {message.text}
-            {message.pending && (
-              <span
+            <div
+              ref={messageContainerRef}
+              style={{
+                flex: 1,
+                backgroundColor: theme.bodyBg,
+                padding: "1rem 1.25rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+                overflowY: "auto",
+              }}
+            >
+              {messages.length === 0 && (
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: theme.emptyState,
+                    fontSize: "0.95rem",
+                    marginTop: "2rem",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Contanos en qué podemos ayudarte y te respondemos enseguida.
+                </div>
+              )}
+
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  style={{
+                    alignSelf:
+                      message.sender === "user" ? "flex-end" : "flex-start",
+                    backgroundColor:
+                      message.sender === "user"
+                        ? theme.userBubbleBg
+                        : theme.botBubbleBg,
+                    color:
+                      message.sender === "user"
+                        ? theme.userBubbleText
+                        : theme.botBubbleText,
+                    padding: "0.8rem 1rem",
+                    lineHeight: 1.4,
+                    borderRadius:
+                      message.sender === "user"
+                        ? "1.15rem 1.15rem 0.35rem 1.15rem"
+                        : "1.15rem 1.15rem 1.15rem 0.35rem",
+                    boxShadow:
+                      message.sender === "user"
+                        ? theme.bubbleShadowUser
+                        : theme.bubbleShadowBot,
+                    maxWidth: "85%",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    fontSize: "0.95rem",
+                    opacity: message.pending ? 0.75 : 1,
+                    position: "relative",
+                  }}
+                >
+                  {message.text}
+                  {message.pending && (
+                    <span
+                      style={{
+                        display: "block",
+                        marginTop: "0.4rem",
+                        fontSize: "0.75rem",
+                        opacity: 0.75,
+                      }}
+                    >
+                      Enviando…
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                padding: "0.75rem 1.25rem 0.5rem",
+                borderTop: `1px solid ${theme.divider}`,
+                backgroundColor: theme.bodyBg,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.5rem",
+              }}
+            >
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  style={{
+                    borderRadius: "9999px",
+                    border: "none",
+                    padding: "0.45rem 0.8rem",
+                    fontSize: "0.78rem",
+                    backgroundColor: "rgba(37, 99, 235, 0.12)",
+                    color: "#2563eb",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s ease, transform 0.2s",
+                  }}
+                  onMouseEnter={(event) => {
+                    event.currentTarget.style.backgroundColor =
+                      "rgba(37, 99, 235, 0.18)";
+                  }}
+                  onMouseLeave={(event) => {
+                    event.currentTarget.style.backgroundColor =
+                      "rgba(37, 99, 235, 0.12)";
+                  }}
+                  onFocus={(event) => {
+                    event.currentTarget.style.backgroundColor =
+                      "rgba(37, 99, 235, 0.18)";
+                  }}
+                  onBlur={(event) => {
+                    event.currentTarget.style.backgroundColor =
+                      "rgba(37, 99, 235, 0.12)";
+                  }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                padding: "0.75rem 1.25rem 1rem",
+                borderTop: `1px solid ${theme.divider}`,
+                backgroundColor: theme.inputBg,
+              }}
+            >
+              <input
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder={placeholder}
+                aria-label="Mensaje"
                 style={{
-                  display: "block",
-                  marginTop: "0.4rem",
-                  fontSize: "0.75rem",
-                  opacity: 0.85,
+                  flex: 1,
+                  borderRadius: "0.85rem",
+                  border: `1px solid ${theme.inputBorder}`,
+                  padding: "0.8rem 1rem",
+                  fontSize: "0.95rem",
+                  outline: "none",
+                  backgroundColor: theme.inputBg,
+                  color: theme.inputText,
+                  transition: "border-color 0.2s ease",
+                }}
+                disabled={loading || !userId}
+              />
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                style={{
+                  borderRadius: "0.9rem",
+                  backgroundColor: canSubmit
+                    ? theme.buttonActive
+                    : theme.buttonDisabled,
+                  color: "#ffffff",
+                  border: "none",
+                  padding: "0.8rem 1.35rem",
+                  fontWeight: 600,
+                  cursor: canSubmit ? "pointer" : "not-allowed",
+                  transition: "background-color 0.2s ease, transform 0.2s ease",
                 }}
               >
-                Enviando…
-              </span>
+                {loading ? "Enviando…" : "Enviar"}
+              </button>
+            </form>
+
+            {errorMessage && (
+              <p
+                aria-live="polite"
+                style={{
+                  margin: 0,
+                  padding: "0 1.25rem 1rem",
+                  color: theme.errorText,
+                  backgroundColor: theme.errorBg,
+                  fontSize: "0.85rem",
+                }}
+              >
+                {errorMessage}
+              </p>
+            )}
+
+            {!userId && (
+              <p
+                style={{
+                  margin: 0,
+                  padding: "0 1.25rem 1rem",
+                  color: theme.initializingText,
+                  fontSize: "0.8rem",
+                  textAlign: "center",
+                }}
+              >
+                Inicializando chat…
+              </p>
             )}
           </div>
-        ))}
+
+          <button
+            type="button"
+            onClick={toggleWidget}
+            aria-expanded={isOpen}
+            aria-label={isOpen ? "Cerrar chat" : "Abrir chat"}
+            style={{
+              width: "64px",
+              height: "64px",
+              borderRadius: "9999px",
+              border: "none",
+              background:
+                "linear-gradient(135deg, rgba(37, 99, 235, 1), rgba(59, 130, 246, 1))",
+              color: "#ffffff",
+              boxShadow: "0 20px 45px rgba(37, 99, 235, 0.35)",
+              cursor: "pointer",
+              position: "relative",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "transform 0.2s ease",
+            }}
+            onMouseEnter={(event) => {
+              event.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(event) => {
+              event.currentTarget.style.transform = "scale(1)";
+            }}
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-6 w-6" />}
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "6px",
+                  right: "8px",
+                  minWidth: "22px",
+                  height: "22px",
+                  borderRadius: "9999px",
+                  backgroundColor: "#ef4444",
+                  color: "#ffffff",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 0.35rem",
+                }}
+              >
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
-
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: "flex",
-          gap: "0.75rem",
-          padding: "1rem",
-          borderTop: `1px solid ${theme.divider}`,
-          backgroundColor: theme.inputBg,
-        }}
-      >
-        <input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder={placeholder}
-          aria-label="Mensaje"
-          style={{
-            flex: 1,
-            borderRadius: "0.75rem",
-            border: `1px solid ${theme.inputBorder}`,
-            padding: "0.75rem 1rem",
-            fontSize: "0.95rem",
-            outline: "none",
-            backgroundColor: theme.inputBg,
-            color: theme.inputText,
-          }}
-          disabled={loading || !userId}
-        />
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          style={{
-            borderRadius: "0.75rem",
-            backgroundColor: canSubmit
-              ? theme.buttonActive
-              : theme.buttonDisabled,
-            color: "#ffffff",
-            border: "none",
-            padding: "0.75rem 1.25rem",
-            fontWeight: 600,
-            cursor: canSubmit ? "pointer" : "not-allowed",
-            transition: "background-color 0.2s ease",
-          }}
-        >
-          {loading ? "Enviando…" : "Enviar"}
-        </button>
-      </form>
-
-      {errorMessage && (
-        <p
-          aria-live="polite"
-          style={{
-            margin: 0,
-            padding: "0.75rem 1rem 1.25rem",
-            color: theme.errorText,
-            backgroundColor: theme.errorBg,
-            fontSize: "0.85rem",
-          }}
-        >
-          {errorMessage}
-        </p>
-      )}
-
-      {!userId && (
-        <p
-          style={{
-            margin: 0,
-            padding: "0 1rem 1rem",
-            color: theme.initializingText,
-            fontSize: "0.8rem",
-            textAlign: "center",
-          }}
-        >
-          Inicializando chat…
-        </p>
-      )}
-    </div>
+    </>
   );
 }
