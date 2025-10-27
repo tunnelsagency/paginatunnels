@@ -39,6 +39,10 @@ export async function GET(req: Request) {
       cache: 'no-store',
     });
 
+    if (upstreamResponse.status === 404) {
+      return NextResponse.json({ messages: [] }, { status: 200 });
+    }
+
     const payload = await upstreamResponse.json().catch(() => ({}));
     return NextResponse.json(payload, { status: upstreamResponse.status });
   } catch (error) {

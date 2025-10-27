@@ -22,7 +22,7 @@ Pasos para Codex o cualquier agente que trabaje sobre la landing
    - En Vercel: Project → Settings → Environment Variables → `Add`. Nombre `UNLOQUIA_LANDING_SECRET`, scope `Production` (y `Preview/Development` si aplica). Redeploy con `vercel deploy` o desde la UI.
 5. Verificar localmente con `vercel dev` o `npm run dev`:
    - Abrir la landing, enviar un mensaje. El widget llamará a `/api/unloquia-proxy` que reenvía a `https://api.unloquia.com/api/v1/workflows/execute/` con `channel: "landing"` y el payload que espera Django.
-   - Revisar la pestaña Network: el polling de `/api/unloquia-messages?clientId=...&sessionId=...` debe devolver `200` y un arreglo `messages`. Si aún no hay respuesta del bot, el array llega vacío.
+   - Revisar la pestaña Network: el polling de `/api/unloquia-messages?clientId=...&sessionId=...` debe devolver `200` y un arreglo `messages`. Si aún no hay respuesta del bot, el array llega vacío (el backend puede responder 404 y se normaliza a 200 con `messages: []`).
    - Confirmar que las respuestas reales del bot aparecen en la interfaz al cabo de unos segundos.
 6. Antes del deploy, asegurar que `clientId`, `messageId`, `userId` y `text` se envían correctamente desde el widget (ya viene configurado para generar IDs y almacenar `userId` en `localStorage`).
    - El `sessionId` enviado al backend coincide con el `userId` (por defecto `contact.wa_id`).
