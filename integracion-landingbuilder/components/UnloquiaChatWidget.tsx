@@ -11,12 +11,11 @@ import {
 
 type Message = {
   id: string;
+  messageId?: string;
   sender: 'user' | 'bot';
   text: string;
-  createdAt?: string;
+  createdAt: string;
   pending?: boolean;
-  sequence?: number;
-  messageId?: string;
 };
 
 type UnloquiaChatWidgetProps = {
@@ -28,14 +27,6 @@ type UnloquiaChatWidgetProps = {
 
 const USER_STORAGE_KEY = 'unloquia-chat-user-id';
 const POLL_INTERVAL_MS = 2000;
-
-const generateId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-};
 
 const toDisplayText = (value: unknown): string => {
   if (value == null) {
@@ -55,46 +46,91 @@ const toDisplayText = (value: unknown): string => {
   }
 };
 
-const messageKey = (message: Message) => {
-  if (message.messageId) {
-    return `id:${message.messageId}`;
+const normaliseRow = (row: any, index: number): Message | null => {
+  if (!row || typeof row !== 'object') {
+    return null;
   }
-  if (message.createdAt) {
-    return `${message.sender}:${message.createdAt}`;
+
+  const roleValue =
+    typeof row.role === 'string'
+      ? row.role.toLowerCase()
+      : typeof row.message_role === 'string'
+      ? row.message_role.toLowerCase()
+      : typeof row.direction === 'string'
+      ? row.direction.toLowerCase()
+      : '';
+
+  const sender: 'user' | 'bot' =
+    roleValue === 'bot' || roleValue === 'assistant'
+      ? 'bot'
+      : roleValue === 'agent' || roleValue === 'outbound'
+      ? 'bot'
+      : 'user';
+
+  const rawText =
+    row.text ??
+    row.message ??
+    (typeof row.body === 'string' ? row.body : row.body?.text) ??
+    (typeof row.content === 'string' ? row.content : row.content?.text) ??
+    row.payload?.text ??
+    row.payload?.message;
+  const text = toDisplayText(rawText).trim();
+  if (!text) {
+    return null;
   }
-  return `${message.sender}:${message.id}`;
+
+  const createdAtSource =
+    row.created_at ??
+    row.timestamp ??
+    row.createdAt ??
+    row.sent_at ??
+    row.updated_at;
+  const createdAt =
+    typeof createdAtSource === 'string'
+      ? createdAtSource
+      : new Date().toISOString();
+
+  const messageId =
+    typeof row.message_id === 'string'
+      ? row.message_id
+      : typeof row.messageId === 'string'
+      ? row.messageId
+      : undefined;
+
+  const id =
+    messageId ??
+    `${sender}:${createdAt}:${text.slice(0, 32)}:${index.toString(16)}`;
+
+  return {
+    id,
+    messageId,
+    sender,
+    text,
+    createdAt,
+    pending: false,
+  };
 };
 
-const compareMessages = (a: Message, b: Message) => {
-  const parsedA = a.createdAt ? Date.parse(a.createdAt) : Number.NaN;
-  const parsedB = b.createdAt ? Date.parse(b.createdAt) : Number.NaN;
-  const hasA = !Number.isNaN(parsedA);
-  const hasB = !Number.isNaN(parsedB);
+const createMessageKey = (message: Message) =>
+  message.messageId ??
+  `${message.sender}:${message.createdAt}:${message.text}`;
 
-  if (hasA && hasB) {
-    if (parsedA !== parsedB) {
-      return parsedA - parsedB;
-    }
-    if (a.sender !== b.sender) {
-      return a.sender === 'user' ? -1 : 1;
-    }
-    const seqA = a.sequence ?? Number.NaN;
-    const seqB = b.sequence ?? Number.NaN;
-    if (!Number.isNaN(seqA) && !Number.isNaN(seqB) && seqA !== seqB) {
-      return seqA - seqB;
-    }
-    return a.id.localeCompare(b.id);
+const sortMessages = (a: Message, b: Message) => {
+  const parsedA = Date.parse(a.createdAt);
+  const parsedB = Date.parse(b.createdAt);
+  if (!Number.isNaN(parsedA) && !Number.isNaN(parsedB) && parsedA !== parsedB) {
+    return parsedA - parsedB;
   }
 
-  if (hasA) {
-    return -1;
+  if (a.sender !== b.sender) {
+    return a.sender === 'user' ? -1 : 1;
   }
 
-  if (hasB) {
-    return 1;
+  if (a.messageId && b.messageId && a.messageId !== b.messageId) {
+    return a.messageId.localeCompare(b.messageId);
   }
 
-  return a.id.localeCompare(b.id);
+  return a.text.localeCompare(b.text);
 };
 
 export default function UnloquiaChatWidget({
@@ -104,34 +140,23 @@ export default function UnloquiaChatWidget({
   placeholder = 'Escribí tu mensaje...',
 }: UnloquiaChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
 
-  const seenMessagesRef = useRef<Set<string>>(new Set());
-  const lastMessageAtRef = useRef<string | null>(null);
-
   useEffect(() => {
-    if (externalUserId) {
-      setStoredUserId(externalUserId);
-      return;
-    }
-
-    const existing = typeof window !== 'undefined'
-      ? window.localStorage.getItem(USER_STORAGE_KEY)
-      : null;
-
-    if (existing) {
-      setStoredUserId(existing);
-      return;
-    }
-
-    const generated = generateId();
-    if (typeof window !== 'undefined') {
+    if (!externalUserId) {
+      const existing = window.localStorage.getItem(USER_STORAGE_KEY);
+      if (existing) {
+        setStoredUserId(existing);
+        return;
+      }
+      const generated = crypto.randomUUID();
       window.localStorage.setItem(USER_STORAGE_KEY, generated);
+      setStoredUserId(generated);
     }
-    setStoredUserId(generated);
   }, [externalUserId]);
 
   const userId = useMemo(
@@ -139,198 +164,86 @@ export default function UnloquiaChatWidget({
     [externalUserId, storedUserId],
   );
 
-  const mergeServerMessages = useCallback((incoming: Message[]) => {
-    setMessages((prev) => {
-      if (incoming.length === 0) {
-        return prev;
-      }
+  const fetchMessages = useCallback(async () => {
+    if (!clientId || !userId) {
+      return;
+    }
 
-      const pending = prev.filter((msg) => msg.pending);
-
-      const serverSeen = new Set<string>();
-      const serverMessages: Message[] = [];
-      const sortedIncoming = [...incoming].sort(compareMessages);
-
-      for (const message of sortedIncoming) {
-        const key = messageKey(message);
-        if (serverSeen.has(key)) {
-          continue;
-        }
-        serverSeen.add(key);
-        serverMessages.push({ ...message, pending: false });
-      }
-
-      const next: Message[] = [...serverMessages];
-      const seen = new Set(serverMessages.map((msg) => messageKey(msg)));
-
-      for (const pendingMsg of pending) {
-        const key = messageKey(pendingMsg);
-        if (seen.has(key)) {
-          continue;
-        }
-        if (
-          pendingMsg.messageId &&
-          serverMessages.some((serverMsg) => serverMsg.messageId === pendingMsg.messageId)
-        ) {
-          continue;
-        }
-        seen.add(key);
-        next.push(pendingMsg);
-      }
-
-      next.sort(compareMessages);
-      const trimmed = next.slice(-200);
-      seenMessagesRef.current = new Set(trimmed.map(messageKey));
-
-      return trimmed;
-    });
-  }, []);
-
-  const fetchLatestMessages = useCallback(
-    async (options?: { resetSince?: boolean }) => {
-      if (!clientId || !userId) {
-        return;
-      }
-
+    try {
       const params = new URLSearchParams({
         clientId,
         sessionId: userId,
         limit: '200',
       });
 
-      if (!options?.resetSince && lastMessageAtRef.current) {
-        params.set('since', lastMessageAtRef.current);
+      const response = await fetch(`/api/unloquia-messages?${params.toString()}`, {
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.text().catch(() => '');
+        console.error(
+          'Failed to fetch landing messages',
+          response.status,
+          errorPayload,
+        );
+        return;
       }
 
-      try {
-        const response = await fetch(`/api/unloquia-messages?${params.toString()}`, {
-          cache: 'no-store',
-        });
+      const payload = await response.json().catch(() => ({}));
+      const rows = Array.isArray(payload?.messages) ? payload.messages : [];
+      const normalised = rows
+        .map(normaliseRow)
+        .filter((msg): msg is Message => Boolean(msg))
+        .sort(sortMessages);
+      const serverKeys = new Set(normalised.map(createMessageKey));
 
-        if (!response.ok) {
-          const errorPayload = await response.text().catch(() => '');
-          console.error('Failed to fetch landing messages', response.status, errorPayload);
-          return;
-        }
-
-        const payload = await response.json().catch(() => ({}));
-        const rows = Array.isArray(payload?.messages) ? payload.messages : [];
-
-        const normalised = rows
-          .map((row: any, index: number): Message | null => {
-            if (!row || typeof row !== 'object') {
-              return null;
-            }
-
-            const roleValue = typeof row.role === 'string' ? row.role.toLowerCase() : '';
-            const sender: 'user' | 'bot' = roleValue === 'bot' ? 'bot' : 'user';
-            const rawText =
-              row.text ??
-              row.message ??
-              (typeof row.content === 'string'
-                ? row.content
-                : row.content?.text) ??
-              (typeof row.body === 'string' ? row.body : row.body?.text);
-            const text = toDisplayText(rawText).trim();
-            const createdAt = typeof row.created_at === 'string' ? row.created_at : undefined;
-
-            if (!text) {
-              return null;
-            }
-
-            const messageId =
-              typeof row.message_id === 'string'
-                ? row.message_id
-                : typeof row.messageId === 'string'
-                ? row.messageId
-                : undefined;
-            const id =
-              messageId ??
-              (createdAt ? `${sender}-${createdAt}` : `${sender}-${generateId()}`);
-
-            return {
-              id,
-              sender,
-              text,
-              createdAt,
-              pending: false,
-              sequence:
-                typeof row.sequence === 'number'
-                  ? row.sequence
-                  : typeof row.position === 'number'
-                  ? row.position
-                  : index,
-              messageId,
-            };
-          })
-          .filter((msg: Message | null): msg is Message => Boolean(msg));
-
-        if (normalised.length === 0) {
-          return;
-        }
-
-        const newestWithTimestamp = normalised
-          .map((msg: Message) => msg.createdAt)
-          .filter((value: string | undefined | null): value is string =>
-            Boolean(value),
-          );
-
-        if (newestWithTimestamp.length > 0) {
-          const newest = newestWithTimestamp[newestWithTimestamp.length - 1];
-          if (newest) {
-            const previous = lastMessageAtRef.current ? Date.parse(lastMessageAtRef.current) : null;
-            const candidate = Date.parse(newest);
-            if (!previous || (candidate && candidate > previous)) {
-              lastMessageAtRef.current = newest;
-            }
-          }
-        }
-
-        mergeServerMessages(normalised);
-      } catch (error) {
-        console.error('Failed to fetch landing messages', error);
-      }
-    },
-    [clientId, userId, mergeServerMessages],
-  );
+      setMessages(normalised);
+      setPendingMessages((prev) =>
+        prev.filter((pendingMsg) => {
+          const key = createMessageKey(pendingMsg);
+          return !serverKeys.has(key);
+        }),
+      );
+    } catch (error) {
+      console.error('Failed to fetch landing messages', error);
+    }
+  }, [clientId, userId]);
 
   useEffect(() => {
-    seenMessagesRef.current.clear();
-    lastMessageAtRef.current = null;
-    setMessages([]);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    if (!clientId || !userId) {
-      return;
-    }
-
-    let canceled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const poll = async (resetSince: boolean) => {
-      if (canceled) {
+    const poll = async () => {
+      if (cancelled) {
         return;
       }
 
-      await fetchLatestMessages({ resetSince });
+      await fetchMessages();
 
-      if (canceled) {
-        return;
+      if (!cancelled) {
+        timer = setTimeout(poll, POLL_INTERVAL_MS);
       }
-
-      timer = setTimeout(() => {
-        void poll(false);
-      }, POLL_INTERVAL_MS);
     };
 
-    void poll(true);
+    poll();
 
     return () => {
-      canceled = true;
+      cancelled = true;
       if (timer) {
         clearTimeout(timer);
       }
     };
-  }, [clientId, userId, fetchLatestMessages]);
+  }, [fetchMessages]);
+
+  const suggestions = useMemo(
+    () => [
+      'Quiero automatizar mis leads',
+      '¿Cómo integran el bot con WhatsApp?',
+      'Necesito una demo personalizada',
+    ],
+    [],
+  );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -340,20 +253,19 @@ export default function UnloquiaChatWidget({
     }
 
     const trimmed = input.trim();
-    const messageId = generateId();
+    const messageId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
 
-    const userMessage: Message = {
+    const pendingMessage: Message = {
       id: messageId,
+      messageId,
       sender: 'user',
       text: trimmed,
       createdAt,
       pending: true,
-      sequence: Date.now(),
-      messageId,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setPendingMessages((prev) => [...prev, pendingMessage]);
     setInput('');
     setErrorMessage(null);
     setLoading(true);
@@ -372,17 +284,13 @@ export default function UnloquiaChatWidget({
         }),
       });
 
-      const data = await response.json().catch(() => ({}));
-
       if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setPendingMessages((prev) =>
+          prev.filter((msg) => msg.messageId !== messageId),
+        );
         setMessages((prev) =>
-          prev.filter(
-            (msg) =>
-              !(
-                msg.pending &&
-                (msg.id === messageId || msg.messageId === messageId)
-              ),
-          ),
+          prev.filter((msg) => msg.messageId !== messageId),
         );
         setErrorMessage(
           data?.error ?? 'No pudimos enviar tu mensaje. Intentá nuevamente.',
@@ -390,24 +298,13 @@ export default function UnloquiaChatWidget({
         return;
       }
 
-      await fetchLatestMessages();
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId || msg.messageId === messageId
-            ? { ...msg, pending: false }
-            : msg,
-        ),
-      );
+      await fetchMessages();
     } catch (error) {
-      setMessages((prev) =>
-        prev.filter(
-          (msg) =>
-            !(
-              msg.pending &&
-              (msg.id === messageId || msg.messageId === messageId)
-            ),
-        ),
+      console.error('Failed to send landing message', error);
+      setPendingMessages((prev) =>
+        prev.filter((msg) => msg.messageId !== messageId),
       );
+      setMessages((prev) => prev.filter((msg) => msg.messageId !== messageId));
       setErrorMessage(
         error instanceof Error ? error.message : 'Error de red inesperado.',
       );
@@ -415,6 +312,23 @@ export default function UnloquiaChatWidget({
       setLoading(false);
     }
   };
+
+  const displayMessages = useMemo(() => {
+    if (pendingMessages.length === 0) {
+      return messages;
+    }
+
+    const serverKeys = new Set(messages.map(createMessageKey));
+    const pendingToAppend = pendingMessages.filter(
+      (pendingMsg) => !serverKeys.has(createMessageKey(pendingMsg)),
+    );
+
+    if (pendingToAppend.length === 0) {
+      return messages;
+    }
+
+    return [...messages, ...pendingToAppend].sort(sortMessages);
+  }, [messages, pendingMessages]);
 
   return (
     <div
@@ -440,7 +354,7 @@ export default function UnloquiaChatWidget({
         }}
       >
         <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>{title}</h2>
-        <p style={{ margin: '0.25rem 0 0', opacity: 0.85, fontSize: '0.9rem' }}>
+        <p style={{ margin: '0.4rem 0 0', opacity: 0.85, fontSize: '0.9rem' }}>
           Respondemos en minutos. Dejá tu mensaje.
         </p>
       </header>
@@ -449,45 +363,51 @@ export default function UnloquiaChatWidget({
         style={{
           flex: 1,
           backgroundColor: '#f9fafb',
-          padding: '1rem',
+          padding: '1.25rem',
           display: 'flex',
           flexDirection: 'column',
           gap: '0.75rem',
-          height: '320px',
+          height: '360px',
           overflowY: 'auto',
         }}
       >
-        {messages.length === 0 && (
+        {displayMessages.length === 0 && (
           <div
             style={{
               textAlign: 'center',
               color: '#6b7280',
               fontSize: '0.95rem',
               marginTop: '2rem',
+              lineHeight: 1.45,
             }}
           >
-            ¡Hola! ¿En qué podemos ayudarte hoy?
+            Contanos en qué podemos ayudarte y te respondemos enseguida.
           </div>
         )}
 
-        {messages.map((message) => (
+        {displayMessages.map((message) => (
           <div
-            key={message.id}
+            key={createMessageKey(message)}
             style={{
-              alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
+              alignSelf:
+                message.sender === 'user' ? 'flex-end' : 'flex-start',
               backgroundColor: message.sender === 'user' ? '#2563eb' : '#ffffff',
               color: message.sender === 'user' ? '#ffffff' : '#111827',
-              padding: '0.75rem 1rem',
-              borderRadius: '1rem',
+              padding: '0.8rem 1rem',
+              lineHeight: 1.4,
+              borderRadius:
+                message.sender === 'user'
+                  ? '1.15rem 1.15rem 0.35rem 1.15rem'
+                  : '1.15rem 1.15rem 1.15rem 0.35rem',
               boxShadow:
                 message.sender === 'user'
                   ? '0 10px 20px rgba(37, 99, 235, 0.25)'
-                  : '0 10px 20px rgba(15, 23, 42, 0.08)',
+                  : '0 12px 24px rgba(15, 23, 42, 0.12)',
               maxWidth: '80%',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
               fontSize: '0.95rem',
-              opacity: message.pending ? 0.7 : 1,
+              opacity: message.pending ? 0.75 : 1,
             }}
           >
             {message.text}
@@ -497,7 +417,7 @@ export default function UnloquiaChatWidget({
                   display: 'block',
                   marginTop: '0.4rem',
                   fontSize: '0.75rem',
-                  opacity: 0.8,
+                  opacity: 0.75,
                 }}
               >
                 Enviando…
@@ -543,7 +463,8 @@ export default function UnloquiaChatWidget({
             border: 'none',
             padding: '0.75rem 1.25rem',
             fontWeight: 600,
-            cursor: loading || !input.trim() || !userId ? 'not-allowed' : 'pointer',
+            cursor:
+              loading || !input.trim() || !userId ? 'not-allowed' : 'pointer',
             transition: 'background-color 0.2s ease',
           }}
         >
@@ -553,6 +474,7 @@ export default function UnloquiaChatWidget({
 
       {errorMessage && (
         <p
+          aria-live="polite"
           style={{
             margin: 0,
             padding: '0.75rem 1rem 1.25rem',
