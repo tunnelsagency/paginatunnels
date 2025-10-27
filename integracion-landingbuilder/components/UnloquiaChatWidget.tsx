@@ -16,6 +16,7 @@ type Message = {
   createdAt?: string;
   pending?: boolean;
   sequence?: number;
+  messageId?: string;
 };
 
 type UnloquiaChatWidgetProps = {
@@ -55,6 +56,7 @@ const toDisplayText = (value: unknown): string => {
 };
 
 const messageKey = (message: Message) =>
+  message.messageId ??
   `${message.sender}:${message.createdAt ?? message.id}`;
 
 const compareMessages = (a: Message, b: Message) => {
@@ -141,14 +143,24 @@ export default function UnloquiaChatWidget({
       const nonPending = prev.filter((msg) => !msg.pending);
 
       const incomingKeys = new Set(incoming.map(messageKey));
-      const filteredPending = pending.filter(
-        (pendingMsg) =>
-          !incoming.some(
-            (serverMsg) =>
-              serverMsg.sender === pendingMsg.sender &&
-              serverMsg.text === pendingMsg.text,
-          ),
-      );
+      const filteredPending = pending.filter((pendingMsg) => {
+        if (pendingMsg.messageId) {
+          return !incoming.some(
+            (serverMsg) => serverMsg.messageId === pendingMsg.messageId,
+          );
+        }
+
+        const key = messageKey(pendingMsg);
+        if (incomingKeys.has(key)) {
+          return false;
+        }
+
+        return !incoming.some(
+          (serverMsg) =>
+            serverMsg.sender === pendingMsg.sender &&
+            serverMsg.text === pendingMsg.text,
+        );
+      });
 
       const next: Message[] = [];
       const seen = new Set<string>();
@@ -236,7 +248,15 @@ export default function UnloquiaChatWidget({
               return null;
             }
 
-            const id = createdAt ? `${sender}-${createdAt}` : `${sender}-${generateId()}`;
+            const messageId =
+              typeof row.message_id === 'string'
+                ? row.message_id
+                : typeof row.messageId === 'string'
+                ? row.messageId
+                : undefined;
+            const id =
+              messageId ??
+              (createdAt ? `${sender}-${createdAt}` : `${sender}-${generateId()}`);
 
             return {
               id,
@@ -250,6 +270,7 @@ export default function UnloquiaChatWidget({
                   : typeof row.position === 'number'
                   ? row.position
                   : index,
+              messageId,
             };
           })
           .filter((msg: Message | null): msg is Message => Boolean(msg));
@@ -339,6 +360,7 @@ export default function UnloquiaChatWidget({
       createdAt,
       pending: true,
       sequence: Date.now(),
+      messageId,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -363,7 +385,15 @@ export default function UnloquiaChatWidget({
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setMessages((prev) => prev.filter((msg) => !(msg.pending && msg.id === messageId)));
+        setMessages((prev) =>
+          prev.filter(
+            (msg) =>
+              !(
+                msg.pending &&
+                (msg.id === messageId || msg.messageId === messageId)
+              ),
+          ),
+        );
         setErrorMessage(
           data?.error ?? 'No pudimos enviar tu mensaje. Intentá nuevamente.',
         );
@@ -371,8 +401,23 @@ export default function UnloquiaChatWidget({
       }
 
       await fetchLatestMessages();
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId || msg.messageId === messageId
+            ? { ...msg, pending: false }
+            : msg,
+        ),
+      );
     } catch (error) {
-      setMessages((prev) => prev.filter((msg) => !(msg.pending && msg.id === messageId)));
+      setMessages((prev) =>
+        prev.filter(
+          (msg) =>
+            !(
+              msg.pending &&
+              (msg.id === messageId || msg.messageId === messageId)
+            ),
+        ),
+      );
       setErrorMessage(
         error instanceof Error ? error.message : 'Error de red inesperado.',
       );
