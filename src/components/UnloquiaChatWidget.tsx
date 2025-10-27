@@ -123,8 +123,16 @@ const createMessageKey = (message: Message) =>
 const sortMessages = (a: Message, b: Message) => {
   const parsedA = Date.parse(a.createdAt);
   const parsedB = Date.parse(b.createdAt);
-  if (!Number.isNaN(parsedA) && !Number.isNaN(parsedB) && parsedA !== parsedB) {
-    return parsedA - parsedB;
+  const bothValid = !Number.isNaN(parsedA) && !Number.isNaN(parsedB);
+  if (bothValid) {
+    const delta = parsedA - parsedB;
+    if (delta !== 0) {
+      // Si están muy cerca en el tiempo (±10s), priorizar que user vaya antes que bot
+      if (Math.abs(delta) <= 10_000 && a.sender !== b.sender) {
+        return a.sender === "user" ? -1 : 1;
+      }
+      return delta;
+    }
   }
 
   if (a.sender !== b.sender) {
@@ -256,8 +264,7 @@ export default function UnloquiaChatWidget({
         : [];
       const normalised = rows
         .map((row, idx) => normaliseRow(row as any, idx))
-        .filter((msg): msg is Message => Boolean(msg))
-        .sort(sortMessages);
+        .filter((msg): msg is Message => Boolean(msg));
 
       // Dedupe only by messageId when available
       const seenIds = new Set<string>();
@@ -278,39 +285,50 @@ export default function UnloquiaChatWidget({
         }
       }
 
-      // Merge with existing messages by messageId/composite
+      // Merge con orden de llegada (no sort):
+      // - Actualiza en lugar si ya existía por messageId/composite
+      // - Si es nuevo, lo agrega al final
       setMessages((prev) => {
-        const byId = new Map<string, Message>();
-        const compositeSet = new Set<string>();
-        const out: Message[] = [];
+        const idIndex = new Map<string, number>();
+        const compositeIndex = new Map<string, number>();
+        const result = prev.slice();
 
-        const add = (m: Message) => {
+        for (let i = 0; i < prev.length; i++) {
+          const m = prev[i];
           if (m.messageId) {
-            byId.set(m.messageId, m);
+            idIndex.set(m.messageId, i);
+          } else {
+            compositeIndex.set(`${m.sender}|${m.createdAt}|${m.text}`, i);
+          }
+        }
+
+        for (const m of uniqueFromServer) {
+          if (m.messageId && idIndex.has(m.messageId)) {
+            const idx = idIndex.get(m.messageId)!;
+            result[idx] = m;
           } else {
             const k = `${m.sender}|${m.createdAt}|${m.text}`;
-            if (!compositeSet.has(k)) {
-              compositeSet.add(k);
-              out.push(m);
+            if (compositeIndex.has(k)) {
+              const idx = compositeIndex.get(k)!;
+              result[idx] = m;
+            } else {
+              result.push(m);
+              // actualizar índices por si hay repetidos en el mismo lote
+              if (m.messageId) idIndex.set(m.messageId, result.length - 1);
+              else compositeIndex.set(k, result.length - 1);
             }
           }
-        };
+        }
 
-        for (const m of prev) add(m);
-        for (const m of uniqueFromServer) add(m);
-
-        // Reconstruct final list from maps + out, then sort
-        const merged = [...out, ...Array.from(byId.values())].sort(sortMessages);
-
-        // Update since cursor with newest createdAt
-        const stamps = merged
+        // Update since cursor con el último createdAt visible
+        const stamps = result
           .map((m) => m.createdAt)
           .filter((s): s is string => typeof s === "string" && s.length > 0);
         if (stamps.length > 0) {
           lastTimestampRef.current = stamps[stamps.length - 1];
         }
 
-        return merged;
+        return result;
       });
 
       // Remove only pending messages that have been acknowledged by server (same messageId)
@@ -319,10 +337,35 @@ export default function UnloquiaChatWidget({
           .map((m) => m.messageId)
           .filter((v): v is string => typeof v === "string" && v.length > 0),
       );
+      const serverUserEchoes = uniqueFromServer.filter(
+        (m) => m.sender === "user" && typeof m.createdAt === "string",
+      );
+      const serverBotReplies = uniqueFromServer.filter(
+        (m) => m.sender === "bot" && typeof m.createdAt === "string",
+      );
       setPendingMessages((prev) =>
-        prev.filter((pendingMsg) =>
-          pendingMsg.messageId ? !serverMessageIds.has(pendingMsg.messageId) : true,
-        ),
+        prev.filter((pendingMsg) => {
+          if (pendingMsg.messageId && serverMessageIds.has(pendingMsg.messageId)) {
+            return false;
+          }
+          // Heurística: si el backend no devuelve messageId para el inbound,
+          // consideramos ack si aparece un mensaje de 'user' con el mismo texto
+          // y un createdAt cercano (+/- 30s)
+          const pTime = Date.parse(pendingMsg.createdAt);
+          const echoed = serverUserEchoes.some((m) => {
+            if (m.text !== pendingMsg.text) return false;
+            const t = Date.parse(m.createdAt);
+            return Number.isFinite(pTime) && Number.isFinite(t) && Math.abs(t - pTime) <= 30_000;
+          });
+          if (echoed) return false;
+          // Fallback: si ya existe una respuesta del bot posterior a la marca de tiempo
+          // del pending, asumimos que el servidor aceptó el mensaje y removemos el pending.
+          const replied = serverBotReplies.some((m) => {
+            const t = Date.parse(m.createdAt);
+            return Number.isFinite(pTime) && Number.isFinite(t) && t >= pTime - 5_000;
+          });
+          return !replied;
+        }),
       );
     } catch (error) {
       console.error("Failed to fetch landing messages", error);
@@ -446,8 +489,8 @@ export default function UnloquiaChatWidget({
     if (pendingToAppend.length === 0) {
       return messages;
     }
-
-    return [...messages, ...pendingToAppend].sort(sortMessages);
+    // Mantener los mensajes del server ordenados y agregar los pending al final
+    return [...messages, ...pendingToAppend];
   }, [messages, pendingMessages]);
 
   const canSubmit = Boolean(input.trim() && userId && !loading);
