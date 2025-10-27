@@ -67,6 +67,9 @@ const compareMessages = (a: Message, b: Message) => {
     if (parsedA !== parsedB) {
       return parsedA - parsedB;
     }
+    if (a.sender !== b.sender) {
+      return a.sender === "user" ? -1 : 1;
+    }
     return a.id.localeCompare(b.id);
   }
 
