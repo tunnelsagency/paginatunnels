@@ -485,6 +485,11 @@ export default function UnloquiaChatWidget({
       }
 
       await fetchLatestMessages();
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, pending: false } : msg,
+        ),
+      );
     } catch (error) {
       setMessages((prev) =>
         prev.filter((msg) => !(msg.pending && msg.id === messageId)),
@@ -546,7 +551,7 @@ export default function UnloquiaChatWidget({
     }
   };
 
-  const panelHeight = isMobileView ? "min(72vh, 560px)" : "520px";
+  const panelHeight = isMobileView ? "min(80vh, 640px)" : "580px";
   const panelWidth = isMobileView
     ? "min(100vw - 1.5rem, 420px)"
     : "min(400px, calc(100vw - 2.5rem))";
@@ -664,7 +669,7 @@ export default function UnloquiaChatWidget({
               style={{
                 flex: 1,
                 backgroundColor: theme.bodyBg,
-                padding: "1rem 1.25rem",
+                padding: "1.25rem 1.5rem",
                 display: "flex",
                 flexDirection: "column",
                 gap: "0.75rem",
