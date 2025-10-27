@@ -16,6 +16,7 @@ type Message = {
   text: string;
   createdAt?: string;
   pending?: boolean;
+  sequence?: number;
 };
 
 type UnloquiaChatWidgetProps = {
@@ -69,6 +70,11 @@ const compareMessages = (a: Message, b: Message) => {
     }
     if (a.sender !== b.sender) {
       return a.sender === "user" ? -1 : 1;
+    }
+    const seqA = a.sequence ?? Number.NaN;
+    const seqB = b.sequence ?? Number.NaN;
+    if (!Number.isNaN(seqA) && !Number.isNaN(seqB) && seqA !== seqB) {
+      return seqA - seqB;
     }
     return a.id.localeCompare(b.id);
   }
@@ -329,7 +335,7 @@ export default function UnloquiaChatWidget({
         const rows = Array.isArray(payload?.messages) ? payload.messages : [];
 
         const normalised = rows
-          .map((row: any): Message | null => {
+          .map((row: any, index: number): Message | null => {
             if (!row || typeof row !== "object") {
               return null;
             }
@@ -362,6 +368,12 @@ export default function UnloquiaChatWidget({
               text,
               createdAt,
               pending: false,
+              sequence:
+                typeof row.sequence === "number"
+                  ? row.sequence
+                  : typeof row.position === "number"
+                  ? row.position
+                  : index,
             };
           })
           .filter((msg: Message | null): msg is Message => Boolean(msg));
@@ -461,6 +473,7 @@ export default function UnloquiaChatWidget({
       text: trimmed,
       createdAt,
       pending: true,
+      sequence: Date.now(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
