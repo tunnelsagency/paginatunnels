@@ -33,6 +33,87 @@ type UnloquiaChatWidgetProps = {
 const USER_STORAGE_KEY = "unloquia-chat-user-id";
 const POLL_INTERVAL_MS = 2000;
 const SIMPLE_MODE = true;
+const CONVO_STORAGE_PREFIX = "unloquia-chat-convo-v1";
+
+type StoredUserMessage = {
+  id: string;
+  text: string;
+  createdAt: string;
+  pending?: boolean;
+};
+
+const getStoreKey = (clientId: string, sessionId: string) =>
+  `${CONVO_STORAGE_PREFIX}:${clientId}:${sessionId}`;
+
+const loadStoredUserMessages = (
+  clientId?: string,
+  sessionId?: string | null,
+): Message[] => {
+  try {
+    if (!clientId || !sessionId) return [];
+    const key = getStoreKey(clientId, sessionId);
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((r: any, idx: number): Message | null => {
+        if (!r || typeof r !== "object") return null;
+        const id = typeof r.id === "string" ? r.id : crypto.randomUUID();
+        const text = typeof r.text === "string" ? r.text : "";
+        const createdAt =
+          typeof r.createdAt === "string" ? r.createdAt : new Date().toISOString();
+        if (!text) return null;
+        return { id, messageId: id, sender: "user", text, createdAt, pending: !!r.pending };
+      })
+      .filter(Boolean) as Message[];
+  } catch {
+    return [];
+  }
+};
+
+const persistStoredUserMessage = (
+  clientId: string,
+  sessionId: string,
+  msg: Message,
+) => {
+  try {
+    const key = getStoreKey(clientId, sessionId);
+    const current = loadStoredUserRaw(clientId, sessionId);
+    const next: StoredUserMessage[] = [
+      ...current,
+      { id: msg.messageId ?? msg.id, text: msg.text, createdAt: msg.createdAt, pending: !!msg.pending },
+    ];
+    window.localStorage.setItem(key, JSON.stringify(next));
+  } catch {}
+};
+
+const loadStoredUserRaw = (clientId: string, sessionId: string): StoredUserMessage[] => {
+  try {
+    const key = getStoreKey(clientId, sessionId);
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as unknown;
+    return Array.isArray(arr) ? (arr as StoredUserMessage[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const updateStoredUserPending = (
+  clientId?: string,
+  sessionId?: string | null,
+  messageId?: string,
+  pending?: boolean,
+) => {
+  try {
+    if (!clientId || !sessionId || !messageId) return;
+    const key = getStoreKey(clientId, sessionId);
+    const current = loadStoredUserRaw(clientId, sessionId);
+    const next = current.map((m) => (m.id === messageId ? { ...m, pending: !!pending } : m));
+    window.localStorage.setItem(key, JSON.stringify(next));
+  } catch {}
+};
 
 const toDisplayText = (value: unknown): string => {
   if (value == null) {
@@ -128,7 +209,7 @@ const sortMessages = (a: Message, b: Message) => {
   if (bothValid) {
     const delta = parsedA - parsedB;
     if (delta !== 0) {
-      // Si están muy cerca en el tiempo (±10s), priorizar que user vaya antes que bot
+      // If timestamps are within ±10s, keep the user's bubble ahead of the bot reply
       if (Math.abs(delta) <= 10_000 && a.sender !== b.sender) {
         return a.sender === "user" ? -1 : 1;
       }
@@ -150,8 +231,8 @@ const sortMessages = (a: Message, b: Message) => {
 export default function UnloquiaChatWidget({
   clientId,
   userId: externalUserId,
-  title = "Conversemos",
-  placeholder = "Escribí tu mensaje...",
+  title = "Let's chat",
+  placeholder = "Type your message...",
 }: UnloquiaChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
@@ -287,15 +368,16 @@ export default function UnloquiaChatWidget({
         }
       }
 
-      // En modo simple, solo bot desde servidor
+      // In simple mode we only ingest bot messages coming from the server
       const serverBots = SIMPLE_MODE
         ? uniqueFromServer.filter((m) => m.sender === "bot")
         : uniqueFromServer;
 
-      // Primera hidratación: ordenar cronológicamente y recortar
+      // First hydration: sort chronologically and trim the history
       if (!hydratedRef.current) {
-        const initialSorted = serverBots.slice().sort(sortMessages);
-        const trimmed = initialSorted.slice(-50);
+        const localUsers = SIMPLE_MODE ? loadStoredUserMessages(clientId, userId) : [];
+        const initialCombined = [...serverBots, ...localUsers].sort(sortMessages);
+        const trimmed = initialCombined.slice(-50);
         setMessages(trimmed);
         const stamps = trimmed
           .map((m) => m.createdAt)
@@ -305,9 +387,7 @@ export default function UnloquiaChatWidget({
         }
         hydratedRef.current = true;
       } else {
-        // Merge con orden de llegada (no sort):
-        // - Actualiza en lugar si ya existía por messageId/composite
-        // - Si es nuevo, lo agrega al final
+        // Merge by arrival order (no resort): replace existing entries or append new ones
         setMessages((prev) => {
           const idIndex = new Map<string, number>();
           const compositeIndex = new Map<string, number>();
@@ -333,14 +413,14 @@ export default function UnloquiaChatWidget({
               result[idx] = m;
             } else {
               result.push(m);
-              // actualizar índices por si hay repetidos en el mismo lote
+              // update indexes so repeated items in the same batch merge correctly
               if (m.messageId) idIndex.set(m.messageId, result.length - 1);
               else compositeIndex.set(k, result.length - 1);
             }
           }
         }
 
-          // Update since cursor con el último createdAt visible
+          // Update since cursor with the most recent createdAt we have rendered
           const stamps = result
             .map((m) => m.createdAt)
             .filter((s): s is string => typeof s === "string" && s.length > 0);
@@ -420,9 +500,9 @@ export default function UnloquiaChatWidget({
 
   const suggestions = useMemo(
     () => [
-      "Quiero automatizar mis leads",
-      "¿Cómo integran el bot con WhatsApp?",
-      "Necesito una demo personalizada",
+      "I'd like to automate my leads",
+      "How does the WhatsApp bot integration work?",
+      "Can I book a tailored demo?",
     ],
     [],
   );
@@ -447,6 +527,13 @@ export default function UnloquiaChatWidget({
       pending: true,
     };
 
+    if (SIMPLE_MODE) {
+      setMessages((prev) => [...prev, pendingMessage]);
+      // persist user message locally for hydration on reload
+      if (clientId && userId) {
+        persistStoredUserMessage(clientId, userId, pendingMessage);
+      }
+    }
     setPendingMessages((prev) => [...prev, pendingMessage]);
     setInput("");
     setErrorMessage(null);
@@ -474,29 +561,33 @@ export default function UnloquiaChatWidget({
           prev.filter((msg) => msg.messageId !== messageId),
         );
         setErrorMessage(
-          data?.error ?? "No pudimos enviar tu mensaje. Intentá nuevamente.",
+          data?.error ?? "We couldn't send your message. Please try again.",
         );
         return;
       }
       if (SIMPLE_MODE) {
-        // Confirmar visualmente: quitar bandera pending del mensaje
+        // Visually confirm: remove pending flag once backend acknowledges
         setPendingMessages((prev) =>
           prev.map((m) => (m.messageId === messageId ? { ...m, pending: false } : m)),
         );
+        setMessages((prev) =>
+          prev.map((m) => (m.messageId === messageId ? { ...m, pending: false } : m)),
+        );
+        updateStoredUserPending(clientId, userId, messageId, false);
       } else {
         await fetchMessages();
       }
     } catch (error) {
       console.error("Failed to send landing message", error);
-      setPendingMessages((prev) =>
-        prev.filter((msg) => msg.messageId !== messageId),
-      );
-      setMessages((prev) =>
-        prev.filter((msg) => msg.messageId !== messageId),
-      );
-      setErrorMessage(
-        error instanceof Error ? error.message : "Error de red inesperado.",
-      );
+        setPendingMessages((prev) =>
+          prev.filter((msg) => msg.messageId !== messageId),
+        );
+        setMessages((prev) =>
+          prev.filter((msg) => msg.messageId !== messageId),
+        );
+        setErrorMessage(
+          error instanceof Error ? error.message : "Unexpected network error.",
+        );
     } finally {
       setLoading(false);
     }
@@ -515,7 +606,7 @@ export default function UnloquiaChatWidget({
     if (pendingToAppend.length === 0) {
       return messages;
     }
-    // Mantener los mensajes del server ordenados y agregar los pending al final
+    // Keep server messages in order and append pending ones at the end
     return [...messages, ...pendingToAppend];
   }, [messages, pendingMessages]);
 
@@ -575,7 +666,7 @@ export default function UnloquiaChatWidget({
             containerBg: "#0f172a",
             containerBorder: "rgba(148, 163, 184, 0.18)",
             containerShadow: "0 36px 90px rgba(8, 47, 73, 0.55)",
-            headerBg: "linear-gradient(135deg, #1e3a8a, #2563eb)",
+            headerBg: "linear-gradient(135deg, #1d4ed8, #2563eb)",
             headerDivider: "rgba(37, 99, 235, 0.35)",
             headerText: "#f8fafc",
             headerCaption: "rgba(226, 232, 240, 0.75)",
@@ -601,7 +692,7 @@ export default function UnloquiaChatWidget({
             containerBg: "#ffffff",
             containerBorder: "rgba(15, 23, 42, 0.12)",
             containerShadow: "0 30px 80px rgba(15, 23, 42, 0.18)",
-            headerBg: "linear-gradient(135deg, #1d4ed8, #2563eb)",
+            headerBg: "linear-gradient(135deg, #1e3a8a, #2563eb)",
             headerDivider: "rgba(37, 99, 235, 0.22)",
             headerText: "#ffffff",
             headerCaption: "rgba(255, 255, 255, 0.85)",
@@ -626,14 +717,17 @@ export default function UnloquiaChatWidget({
     [isDarkMode],
   );
 
-  const panelHeight = isMobileView ? "min(80vh, 640px)" : "580px";
+  const panelHeight = isMobileView
+    ? "min(520px, calc(100vh - 4.5rem))"
+    : "min(520px, calc(100vh - 5rem))";
   const panelWidth = isMobileView
-    ? "min(100vw - 1.5rem, 420px)"
-    : "min(420px, calc(100vw - 2.5rem))";
+    ? "min(100vw - 1.75rem, 360px)"
+    : "min(360px, calc(100vw - 3rem))";
 
   const panelStyle: React.CSSProperties = {
     width: panelWidth,
     height: panelHeight,
+    maxHeight: "calc(100vh - 4rem)",
     borderRadius: isMobileView ? "1.75rem" : "1.5rem",
     border: `1px solid ${theme.containerBorder}`,
     boxShadow: isMobileView
@@ -669,7 +763,7 @@ export default function UnloquiaChatWidget({
       <div
         style={{
           position: "fixed",
-          bottom: isMobileView ? "1rem" : "1.5rem",
+          bottom: isMobileView ? "1rem" : "1rem",
           right: isMobileView ? "auto" : "1.5rem",
           left: isMobileView ? "50%" : "auto",
           transform: isMobileView ? "translateX(-50%)" : "none",
@@ -713,7 +807,7 @@ export default function UnloquiaChatWidget({
                   }}
                 >
                   <Sparkles className="h-4 w-4" />
-                  Siempre online
+                  Always online
                 </div>
                 <h2
                   style={{
@@ -733,7 +827,7 @@ export default function UnloquiaChatWidget({
                     lineHeight: 1.4,
                   }}
                 >
-                  Nuestro equipo responde en minutos.
+                  Our team replies in minutes.
                 </p>
               </div>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -761,7 +855,7 @@ export default function UnloquiaChatWidget({
                     lineHeight: 1.45,
                   }}
                 >
-                  Contanos en qué podemos ayudarte y te respondemos enseguida.
+                  Tell us how we can help and we'll get back to you shortly.
                 </div>
               )}
 
@@ -806,7 +900,7 @@ export default function UnloquiaChatWidget({
                         opacity: 0.75,
                       }}
                     >
-                      Enviando…
+                      Sending…
                     </span>
                   )}
                 </div>
@@ -833,8 +927,8 @@ export default function UnloquiaChatWidget({
                     border: "none",
                     padding: "0.45rem 0.8rem",
                     fontSize: "0.78rem",
-                    backgroundColor: "rgba(37, 99, 235, 0.12)",
-                    color: "#2563eb",
+                backgroundColor: "rgba(37, 99, 235, 0.12)",
+                color: "#1d4ed8",
                     cursor: "pointer",
                     transition: "background-color 0.2s ease, transform 0.2s",
                   }}
@@ -874,7 +968,7 @@ export default function UnloquiaChatWidget({
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 placeholder={placeholder}
-                aria-label="Mensaje"
+                aria-label="Message"
                 style={{
                   flex: 1,
                   borderRadius: "0.85rem",
@@ -904,7 +998,7 @@ export default function UnloquiaChatWidget({
                   transition: "background-color 0.2s ease, transform 0.2s ease",
                 }}
               >
-                {loading ? "Enviando…" : "Enviar"}
+                {loading ? "Sending…" : "Send"}
               </button>
             </form>
 
@@ -933,7 +1027,7 @@ export default function UnloquiaChatWidget({
                   textAlign: "center",
                 }}
               >
-                Inicializando chat…
+                Warming up the chat…
               </p>
             )}
           </div>
@@ -942,7 +1036,7 @@ export default function UnloquiaChatWidget({
             type="button"
             onClick={toggleWidget}
             aria-expanded={isOpen}
-            aria-label={isOpen ? "Cerrar chat" : "Abrir chat"}
+            aria-label={isOpen ? "Close chat" : "Open chat"}
             style={{
               width: "64px",
               height: "64px",
