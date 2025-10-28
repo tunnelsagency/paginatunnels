@@ -32,89 +32,6 @@ type UnloquiaChatWidgetProps = {
 
 const USER_STORAGE_KEY = "unloquia-chat-user-id";
 const POLL_INTERVAL_MS = 2000;
-const SIMPLE_MODE = true;
-const CONVO_STORAGE_PREFIX = "unloquia-chat-convo-v1";
-
-type StoredUserMessage = {
-  id: string;
-  text: string;
-  createdAt: string;
-  pending?: boolean;
-};
-
-const getStoreKey = (clientId: string, sessionId: string) =>
-  `${CONVO_STORAGE_PREFIX}:${clientId}:${sessionId}`;
-
-const loadStoredUserMessages = (
-  clientId?: string,
-  sessionId?: string | null,
-): Message[] => {
-  try {
-    if (!clientId || !sessionId) return [];
-    const key = getStoreKey(clientId, sessionId);
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return [];
-    const arr = JSON.parse(raw) as unknown;
-    if (!Array.isArray(arr)) return [];
-    return arr
-      .map((r: any, idx: number): Message | null => {
-        if (!r || typeof r !== "object") return null;
-        const id = typeof r.id === "string" ? r.id : crypto.randomUUID();
-        const text = typeof r.text === "string" ? r.text : "";
-        const createdAt =
-          typeof r.createdAt === "string" ? r.createdAt : new Date().toISOString();
-        if (!text) return null;
-        return { id, messageId: id, sender: "user", text, createdAt, pending: !!r.pending };
-      })
-      .filter(Boolean) as Message[];
-  } catch {
-    return [];
-  }
-};
-
-const persistStoredUserMessage = (
-  clientId: string,
-  sessionId: string,
-  msg: Message,
-) => {
-  try {
-    const key = getStoreKey(clientId, sessionId);
-    const current = loadStoredUserRaw(clientId, sessionId);
-    const next: StoredUserMessage[] = [
-      ...current,
-      { id: msg.messageId ?? msg.id, text: msg.text, createdAt: msg.createdAt, pending: !!msg.pending },
-    ];
-    window.localStorage.setItem(key, JSON.stringify(next));
-  } catch {}
-};
-
-const loadStoredUserRaw = (clientId: string, sessionId: string): StoredUserMessage[] => {
-  try {
-    const key = getStoreKey(clientId, sessionId);
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return [];
-    const arr = JSON.parse(raw) as unknown;
-    return Array.isArray(arr) ? (arr as StoredUserMessage[]) : [];
-  } catch {
-    return [];
-  }
-};
-
-const updateStoredUserPending = (
-  clientId?: string,
-  sessionId?: string | null,
-  messageId?: string,
-  pending?: boolean,
-) => {
-  try {
-    if (!clientId || !sessionId || !messageId) return;
-    const key = getStoreKey(clientId, sessionId);
-    const current = loadStoredUserRaw(clientId, sessionId);
-    const next = current.map((m) => (m.id === messageId ? { ...m, pending: !!pending } : m));
-    window.localStorage.setItem(key, JSON.stringify(next));
-  } catch {}
-};
-
 const toDisplayText = (value: unknown): string => {
   if (value == null) {
     return "";
@@ -349,122 +266,50 @@ export default function UnloquiaChatWidget({
         .map((row, idx) => normaliseRow(row as any, idx))
         .filter((msg): msg is Message => Boolean(msg));
 
-      // Dedupe only by messageId when available
-      const seenIds = new Set<string>();
-      const seenComposite = new Set<string>();
-      const uniqueFromServer: Message[] = [];
-      for (const m of normalised) {
-        if (m.messageId) {
-          if (!seenIds.has(m.messageId)) {
-            seenIds.add(m.messageId);
-            uniqueFromServer.push(m);
+      let latestTimestamp = lastTimestampRef.current
+        ? Date.parse(lastTimestampRef.current)
+        : Number.NEGATIVE_INFINITY;
+
+      setMessages((prev) => {
+        const next = lastTimestampRef.current ? [...prev] : [];
+        const seenKeys = lastTimestampRef.current
+          ? new Set(next.map(createMessageKey))
+          : new Set<string>();
+
+        if (!lastTimestampRef.current) {
+          next.length = 0;
+          seenKeys.clear();
+        }
+
+        for (const message of normalised) {
+          const key = createMessageKey(message);
+          if (!seenKeys.has(key)) {
+            next.push(message);
+            seenKeys.add(key);
           }
-        } else {
-          const k = `${m.sender}|${m.createdAt}|${m.text}`;
-          if (!seenComposite.has(k)) {
-            seenComposite.add(k);
-            uniqueFromServer.push(m);
+          const timestamp = Date.parse(message.createdAt);
+          if (!Number.isNaN(timestamp) && timestamp > latestTimestamp) {
+            latestTimestamp = timestamp;
           }
         }
+
+        next.sort(sortMessages);
+        return next;
+      });
+
+      if (latestTimestamp > Number.NEGATIVE_INFINITY) {
+        lastTimestampRef.current = new Date(latestTimestamp).toISOString();
       }
 
-      // In simple mode we only ingest bot messages coming from the server
-      const serverBots = SIMPLE_MODE
-        ? uniqueFromServer.filter((m) => m.sender === "bot")
-        : uniqueFromServer;
-
-      // First hydration: sort chronologically and trim the history
       if (!hydratedRef.current) {
-        const localUsers = SIMPLE_MODE ? loadStoredUserMessages(clientId, userId) : [];
-        const initialCombined = [...serverBots, ...localUsers].sort(sortMessages);
-        const trimmed = initialCombined.slice(-50);
-        setMessages(trimmed);
-        const stamps = trimmed
-          .map((m) => m.createdAt)
-          .filter((s): s is string => typeof s === "string" && s.length > 0);
-        if (stamps.length > 0) {
-          lastTimestampRef.current = stamps[stamps.length - 1];
-        }
         hydratedRef.current = true;
-      } else {
-        // Merge by arrival order (no resort): replace existing entries or append new ones
-        setMessages((prev) => {
-          const idIndex = new Map<string, number>();
-          const compositeIndex = new Map<string, number>();
-          const result = prev.slice();
-
-        for (let i = 0; i < prev.length; i++) {
-          const m = prev[i];
-          if (m.messageId) {
-            idIndex.set(m.messageId, i);
-          } else {
-            compositeIndex.set(`${m.sender}|${m.createdAt}|${m.text}`, i);
-          }
-        }
-
-        for (const m of serverBots) {
-          if (m.messageId && idIndex.has(m.messageId)) {
-            const idx = idIndex.get(m.messageId)!;
-            result[idx] = m;
-          } else {
-            const k = `${m.sender}|${m.createdAt}|${m.text}`;
-            if (compositeIndex.has(k)) {
-              const idx = compositeIndex.get(k)!;
-              result[idx] = m;
-            } else {
-              result.push(m);
-              // update indexes so repeated items in the same batch merge correctly
-              if (m.messageId) idIndex.set(m.messageId, result.length - 1);
-              else compositeIndex.set(k, result.length - 1);
-            }
-          }
-        }
-
-          // Update since cursor with the most recent createdAt we have rendered
-          const stamps = result
-            .map((m) => m.createdAt)
-            .filter((s): s is string => typeof s === "string" && s.length > 0);
-          if (stamps.length > 0) {
-            lastTimestampRef.current = stamps[stamps.length - 1];
-          }
-
-          return result;
-        });
       }
 
-      if (!SIMPLE_MODE) {
-        // Remove only pending messages acknowledged by server
-        const serverMessageIds = new Set(
-          uniqueFromServer
-            .map((m) => m.messageId)
-            .filter((v): v is string => typeof v === "string" && v.length > 0),
-        );
-        const serverUserEchoes = uniqueFromServer.filter(
-          (m) => m.sender === "user" && typeof m.createdAt === "string",
-        );
-        const serverBotReplies = uniqueFromServer.filter(
-          (m) => m.sender === "bot" && typeof m.createdAt === "string",
-        );
+      const userMessagesFromServer = normalised.filter((msg) => msg.sender === "user");
+      if (userMessagesFromServer.length > 0) {
+        const acknowledgedTexts = new Set(userMessagesFromServer.map((msg) => msg.text));
         setPendingMessages((prev) =>
-          prev.filter((pendingMsg) => {
-            if (pendingMsg.messageId && serverMessageIds.has(pendingMsg.messageId)) {
-              return false;
-            }
-            const pTime = Date.parse(pendingMsg.createdAt);
-            const echoed = serverUserEchoes.some((m) => {
-              if (m.text !== pendingMsg.text) return false;
-              const t = Date.parse(m.createdAt);
-              return (
-                Number.isFinite(pTime) && Number.isFinite(t) && Math.abs(t - pTime) <= 30_000
-              );
-            });
-            if (echoed) return false;
-            const replied = serverBotReplies.some((m) => {
-              const t = Date.parse(m.createdAt);
-              return Number.isFinite(pTime) && Number.isFinite(t) && t >= pTime - 5_000;
-            });
-            return !replied;
-          }),
+          prev.filter((pendingMsg) => !acknowledgedTexts.has(pendingMsg.text)),
         );
       }
     } catch (error) {
@@ -527,13 +372,6 @@ export default function UnloquiaChatWidget({
       pending: true,
     };
 
-    if (SIMPLE_MODE) {
-      setMessages((prev) => [...prev, pendingMessage]);
-      // persist user message locally for hydration on reload
-      if (clientId && userId) {
-        persistStoredUserMessage(clientId, userId, pendingMessage);
-      }
-    }
     setPendingMessages((prev) => [...prev, pendingMessage]);
     setInput("");
     setErrorMessage(null);
@@ -556,8 +394,6 @@ export default function UnloquiaChatWidget({
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         setPendingMessages((prev) =>
-        prev.filter((msg) => msg.messageId !== messageId));
-        setMessages((prev) =>
           prev.filter((msg) => msg.messageId !== messageId),
         );
         setErrorMessage(
@@ -565,29 +401,16 @@ export default function UnloquiaChatWidget({
         );
         return;
       }
-      if (SIMPLE_MODE) {
-        // Visually confirm: remove pending flag once backend acknowledges
-        setPendingMessages((prev) =>
-          prev.map((m) => (m.messageId === messageId ? { ...m, pending: false } : m)),
-        );
-        setMessages((prev) =>
-          prev.map((m) => (m.messageId === messageId ? { ...m, pending: false } : m)),
-        );
-        updateStoredUserPending(clientId, userId, messageId, false);
-      } else {
-        await fetchMessages();
-      }
+
+      await fetchMessages();
     } catch (error) {
       console.error("Failed to send landing message", error);
-        setPendingMessages((prev) =>
-          prev.filter((msg) => msg.messageId !== messageId),
-        );
-        setMessages((prev) =>
-          prev.filter((msg) => msg.messageId !== messageId),
-        );
-        setErrorMessage(
-          error instanceof Error ? error.message : "Unexpected network error.",
-        );
+      setPendingMessages((prev) =>
+        prev.filter((msg) => msg.messageId !== messageId),
+      );
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unexpected network error.",
+      );
     } finally {
       setLoading(false);
     }
