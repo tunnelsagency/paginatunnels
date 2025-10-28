@@ -370,15 +370,8 @@ export default function UnloquiaChatWidget({
       return messages;
     }
 
-    const serverKeys = new Set(messages.map(createMessageKey));
-    const pendingToAppend = pendingMessages.filter(
-      (pendingMsg) => !serverKeys.has(createMessageKey(pendingMsg)),
-    );
-
-    if (pendingToAppend.length === 0) {
-      return messages;
-    }
-    return [...messages, ...pendingToAppend];
+    const combined = [...messages, ...pendingMessages];
+    return combined.sort(sortMessages);
   }, [messages, pendingMessages]);
 
   useEffect(() => {
