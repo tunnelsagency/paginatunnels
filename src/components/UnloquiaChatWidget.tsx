@@ -167,6 +167,7 @@ export default function UnloquiaChatWidget({
   const initialisedViewRef = useRef(false);
   const lastTimestampRef = useRef<string | null>(null);
   const hydratedRef = useRef(false);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
 
   useEffect(() => {
     if (!externalUserId) {
@@ -447,7 +448,7 @@ export default function UnloquiaChatWidget({
 
     previousBotCountRef.current = botMessages.length;
 
-    if (isOpen && messageContainerRef.current) {
+    if (isOpen && autoScrollEnabled && messageContainerRef.current) {
       requestAnimationFrame(() => {
         messageContainerRef.current?.lastElementChild?.scrollIntoView({
           block: "end",
@@ -455,7 +456,7 @@ export default function UnloquiaChatWidget({
         });
       });
     }
-  }, [displayMessages, isOpen]);
+  }, [displayMessages, isOpen, autoScrollEnabled]);
 
   const toggleWidget = () => {
     setIsOpen((prev) => {
@@ -533,11 +534,11 @@ export default function UnloquiaChatWidget({
   );
 
   const panelHeight = isMobileView
-    ? "min(520px, calc(100vh - 4.5rem))"
-    : "min(520px, calc(100vh - 5rem))";
+    ? "min(75vh, 560px)"
+    : "min(640px, calc(100vh - 4rem))";
   const panelWidth = isMobileView
     ? "min(100vw - 1.75rem, 360px)"
-    : "min(360px, calc(100vw - 3rem))";
+    : "min(400px, calc(100vw - 3rem))";
 
   const panelStyle: React.CSSProperties = {
     width: panelWidth,
@@ -652,12 +653,18 @@ export default function UnloquiaChatWidget({
               ref={messageContainerRef}
               style={{
                 flex: 1,
+                minHeight: 0,
                 backgroundColor: theme.bodyBg,
                 padding: "1.25rem 1.5rem",
                 display: "flex",
                 flexDirection: "column",
-                gap: "0.75rem",
+                gap: "0.85rem",
                 overflowY: "auto",
+              }}
+              onScroll={(event) => {
+                const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+                const atBottom = scrollHeight - (scrollTop + clientHeight) < 80;
+                setAutoScrollEnabled(atBottom);
               }}
             >
               {displayMessages.length === 0 && (
