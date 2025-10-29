@@ -274,11 +274,13 @@ export default function UnloquiaChatWidget({
         ? Date.parse(lastTimestampRef.current)
         : Number.NEGATIVE_INFINITY;
 
+      const resetState = !lastTimestampRef.current || ignoreSinceNextRef.current;
+
       setMessages((prev) => {
-        const next = lastTimestampRef.current ? [...prev] : [];
-        const seenKeys = lastTimestampRef.current
-          ? new Set(next.map(createMessageKey))
-          : new Set<string>();
+        const next = resetState ? [] : [...prev];
+        const seenKeys = resetState
+          ? new Set<string>()
+          : new Set(next.map(createMessageKey));
         const botRecent = new Map<string, number>();
         for (const existing of next) {
           if (existing.sender !== "bot") {
@@ -288,11 +290,6 @@ export default function UnloquiaChatWidget({
           if (!Number.isNaN(ts)) {
             botRecent.set(normalizeForDedupe(existing.text), ts);
           }
-        }
-
-        if (!lastTimestampRef.current) {
-          next.length = 0;
-          seenKeys.clear();
         }
 
         for (const message of normalised) {
