@@ -165,6 +165,7 @@ export default function UnloquiaChatWidget({
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
   const lastTimestampRef = useRef<string | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const ignoreSinceNextRef = useRef(false);
   const fetchingRef = useRef(false);
 
   if (!externalUserId && sessionIdRef.current === null) {
@@ -191,7 +192,7 @@ export default function UnloquiaChatWidget({
         sessionId: userId,
         limit: '200',
       });
-      if (lastTimestampRef.current) {
+      if (lastTimestampRef.current && !ignoreSinceNextRef.current) {
         params.set('since', lastTimestampRef.current);
       }
 
@@ -284,15 +285,20 @@ export default function UnloquiaChatWidget({
 
       const userMessagesFromServer = normalised.filter((msg) => msg.sender === 'user');
       if (userMessagesFromServer.length > 0) {
-        const acknowledgedTexts = new Set(userMessagesFromServer.map((msg) => msg.text));
+        const acknowledgedTexts = new Set(
+          userMessagesFromServer.map((msg) => normalizeForDedupe(msg.text)),
+        );
         setPendingMessages((prev) =>
-          prev.filter((pendingMsg) => !acknowledgedTexts.has(pendingMsg.text)),
+          prev.filter(
+            (pendingMsg) => !acknowledgedTexts.has(normalizeForDedupe(pendingMsg.text)),
+          ),
         );
       }
     } catch (error) {
       console.error('Failed to fetch landing messages', error);
     } finally {
       fetchingRef.current = false;
+      ignoreSinceNextRef.current = false;
     }
   }, [clientId, userId]);
 
@@ -305,6 +311,7 @@ export default function UnloquiaChatWidget({
         return;
       }
 
+      ignoreSinceNextRef.current = true;
       await fetchMessages();
 
       if (!cancelled) {
