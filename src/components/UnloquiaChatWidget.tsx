@@ -30,78 +30,9 @@ type UnloquiaChatWidgetProps = {
   placeholder?: string;
 };
 
-const USER_STORAGE_KEY = "unloquia-chat-user-id";
-const CACHE_STORAGE_PREFIX = "unloquia-chat-cache";
-const MAX_CACHED_MESSAGES = 100;
 const MAX_PENDING_CACHE = 10;
 const POLL_INTERVAL_MS = 2000;
-
-type CachedMessage = {
-  id?: string;
-  messageId?: string;
-  sender: "user" | "bot";
-  text: string;
-  createdAt: string;
-};
-
-type CachedConversation = {
-  messages?: CachedMessage[];
-  pending?: CachedMessage[];
-};
-
-const rehydrateCachedMessage = (
-  entry: CachedMessage,
-  pending: boolean,
-  fallbackIndex: number,
-): Message | null => {
-  if (!entry || typeof entry !== "object") {
-    return null;
-  }
-
-  const senderValue =
-    entry.sender === "bot" ? "bot" : entry.sender === "user" ? "user" : null;
-  if (!senderValue) {
-    return null;
-  }
-
-  const text =
-    typeof entry.text === "string" ? entry.text.trim() : "";
-  if (!text) {
-    return null;
-  }
-
-  const createdAt =
-    typeof entry.createdAt === "string"
-      ? entry.createdAt
-      : new Date().toISOString();
-
-  const messageId =
-    typeof entry.messageId === "string"
-      ? entry.messageId
-      : undefined;
-
-  const id =
-    typeof entry.id === "string" && entry.id
-      ? entry.id
-      : `${senderValue}:${createdAt}:${text.slice(0, 32)}:${fallbackIndex.toString(16)}`;
-
-  return {
-    id,
-    messageId,
-    sender: senderValue,
-    text,
-    createdAt,
-    pending,
-  };
-};
-
-const serialiseCachedMessage = (message: Message): CachedMessage => ({
-  id: message.id,
-  messageId: message.messageId,
-  sender: message.sender,
-  text: message.text,
-  createdAt: message.createdAt,
-});
+const DUPLICATE_WINDOW_MS = 15_000;
 const toDisplayText = (value: unknown): string => {
   if (value == null) {
     return "";
@@ -226,7 +157,6 @@ export default function UnloquiaChatWidget({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [storedUserId, setStoredUserId] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
@@ -236,22 +166,8 @@ export default function UnloquiaChatWidget({
   const previousBotCountRef = useRef(0);
   const initialisedViewRef = useRef(false);
   const lastTimestampRef = useRef<string | null>(null);
-  const hydratedRef = useRef(false);
-  const restoredFromCacheRef = useRef(false);
+  const sessionIdRef = useRef<string | null>(null);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
-
-  useEffect(() => {
-    if (!externalUserId) {
-      const existing = window.localStorage.getItem(USER_STORAGE_KEY);
-      if (existing) {
-        setStoredUserId(existing);
-        return;
-      }
-      const generated = crypto.randomUUID();
-      window.localStorage.setItem(USER_STORAGE_KEY, generated);
-      setStoredUserId(generated);
-    }
-  }, [externalUserId]);
 
   useEffect(() => {
     const updateTheme = () =>
@@ -294,98 +210,14 @@ export default function UnloquiaChatWidget({
     };
   }, [isMobileView, isOpen]);
 
+  if (!externalUserId && sessionIdRef.current === null) {
+    sessionIdRef.current = crypto.randomUUID();
+  }
+
   const userId = useMemo(
-    () => externalUserId ?? storedUserId,
-    [externalUserId, storedUserId],
+    () => externalUserId ?? sessionIdRef.current,
+    [externalUserId],
   );
-
-  useEffect(() => {
-    if (!clientId || !userId || restoredFromCacheRef.current) {
-      return;
-    }
-
-    const cacheKey = `${CACHE_STORAGE_PREFIX}:${clientId}:${userId}`;
-    restoredFromCacheRef.current = true;
-
-    try {
-      const cachedValue = window.localStorage.getItem(cacheKey);
-      if (!cachedValue) {
-        return;
-      }
-
-      const parsed = JSON.parse(cachedValue) as unknown;
-      if (!parsed || typeof parsed !== "object") {
-        return;
-      }
-
-      const restoredMessages: Message[] = [];
-      const restoredPending: Message[] = [];
-
-      if (Array.isArray(parsed)) {
-        parsed.forEach((entry, index) => {
-          const hydrated = rehydrateCachedMessage(entry, false, index);
-          if (hydrated) {
-            restoredMessages.push(hydrated);
-          }
-        });
-      } else {
-        const conversation = parsed as CachedConversation;
-
-        if (Array.isArray(conversation.messages)) {
-          conversation.messages.forEach((entry, index) => {
-            const hydrated = rehydrateCachedMessage(entry, false, index);
-            if (hydrated) {
-              restoredMessages.push(hydrated);
-            }
-          });
-        }
-
-        if (Array.isArray(conversation.pending)) {
-          conversation.pending.forEach((entry, index) => {
-            const hydrated = rehydrateCachedMessage(entry, true, index);
-            if (hydrated) {
-              restoredPending.push(hydrated);
-            }
-          });
-        }
-      }
-
-      restoredMessages.sort(sortMessages);
-      if (restoredMessages.length > MAX_CACHED_MESSAGES) {
-        restoredMessages.splice(
-          0,
-          restoredMessages.length - MAX_CACHED_MESSAGES,
-        );
-      }
-
-      restoredPending.sort(sortMessages);
-      if (restoredPending.length > MAX_PENDING_CACHE) {
-        restoredPending.splice(
-          0,
-          restoredPending.length - MAX_PENDING_CACHE,
-        );
-      }
-
-      const lastMessage = restoredMessages[restoredMessages.length - 1];
-      if (lastMessage) {
-        lastTimestampRef.current = lastMessage.createdAt;
-      }
-
-      if (restoredMessages.length > 0) {
-        setMessages(restoredMessages);
-      }
-
-      if (restoredPending.length > 0) {
-        setPendingMessages(restoredPending);
-      }
-
-      if (restoredMessages.length > 0 || restoredPending.length > 0) {
-        hydratedRef.current = true;
-      }
-    } catch (error) {
-      console.warn("Failed to restore cached chat messages", error);
-    }
-  }, [clientId, userId]);
 
   const fetchMessages = useCallback(async () => {
     if (!clientId || !userId) {
@@ -442,6 +274,24 @@ export default function UnloquiaChatWidget({
         }
 
         for (const message of normalised) {
+          if (message.sender === "bot") {
+            const candidateTimestamp = Date.parse(message.createdAt);
+            const isWithinWindow = (existing: Message) => {
+              if (existing.sender !== "bot" || existing.text !== message.text) {
+                return false;
+              }
+              const existingTimestamp = Date.parse(existing.createdAt);
+              if (Number.isNaN(existingTimestamp) || Number.isNaN(candidateTimestamp)) {
+                return false;
+              }
+              return Math.abs(existingTimestamp - candidateTimestamp) <= DUPLICATE_WINDOW_MS;
+            };
+
+            if (next.some(isWithinWindow)) {
+              continue;
+            }
+          }
+
           const key = createMessageKey(message);
           if (!seenKeys.has(key)) {
             next.push(message);
@@ -454,18 +304,11 @@ export default function UnloquiaChatWidget({
         }
 
         next.sort(sortMessages);
-        if (next.length > MAX_CACHED_MESSAGES) {
-          next.splice(0, next.length - MAX_CACHED_MESSAGES);
-        }
         return next;
       });
 
       if (latestTimestamp > Number.NEGATIVE_INFINITY) {
         lastTimestampRef.current = new Date(latestTimestamp).toISOString();
-      }
-
-      if (!hydratedRef.current) {
-        hydratedRef.current = true;
       }
 
       const userMessagesFromServer = normalised.filter((msg) => msg.sender === "user");
@@ -593,28 +436,6 @@ export default function UnloquiaChatWidget({
     const combined = [...messages, ...pendingMessages];
     return combined.sort(sortMessages);
   }, [messages, pendingMessages]);
-
-  useEffect(() => {
-    if (!clientId || !userId) {
-      return;
-    }
-
-    const cacheKey = `${CACHE_STORAGE_PREFIX}:${clientId}:${userId}`;
-    const serialised: CachedConversation = {
-      messages: messages
-        .slice(-MAX_CACHED_MESSAGES)
-        .map((message) => serialiseCachedMessage(message)),
-      pending: pendingMessages
-        .slice(-MAX_PENDING_CACHE)
-        .map((message) => serialiseCachedMessage(message)),
-    };
-
-    try {
-      window.localStorage.setItem(cacheKey, JSON.stringify(serialised));
-    } catch (error) {
-      console.warn("Failed to cache chat messages", error);
-    }
-  }, [messages, pendingMessages, clientId, userId]);
 
   const canSubmit = Boolean(input.trim() && userId && !loading);
 
