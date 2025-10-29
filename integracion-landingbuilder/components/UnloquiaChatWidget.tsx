@@ -31,7 +31,7 @@ type UnloquiaChatWidgetProps = {
 
 const MAX_PENDING_CACHE = 10;
 const POLL_INTERVAL_MS = 2000;
-const DUPLICATE_WINDOW_MS = 15_000;
+const DUPLICATE_WINDOW_MS = 30_000;
 
 const toDisplayText = (value: unknown): string => {
   if (value == null) {
@@ -216,6 +216,16 @@ export default function UnloquiaChatWidget({
         const seenKeys = lastTimestampRef.current
           ? new Set(next.map(createMessageKey))
           : new Set<string>();
+        const botRecent = new Map<string, number>();
+        for (const existing of next) {
+          if (existing.sender !== 'bot') {
+            continue;
+          }
+          const ts = Date.parse(existing.createdAt);
+          if (!Number.isNaN(ts)) {
+            botRecent.set(existing.text, ts);
+          }
+        }
 
         if (!lastTimestampRef.current) {
           next.length = 0;
@@ -225,19 +235,14 @@ export default function UnloquiaChatWidget({
         for (const message of normalised) {
           if (message.sender === 'bot') {
             const candidateTimestamp = Date.parse(message.createdAt);
-            const isWithinWindow = (existing: Message) => {
-              if (existing.sender !== 'bot' || existing.text !== message.text) {
-                return false;
+            if (!Number.isNaN(candidateTimestamp)) {
+              const lastSeen = botRecent.get(message.text);
+              if (
+                lastSeen !== undefined &&
+                Math.abs(candidateTimestamp - lastSeen) <= DUPLICATE_WINDOW_MS
+              ) {
+                continue;
               }
-              const existingTimestamp = Date.parse(existing.createdAt);
-              if (Number.isNaN(existingTimestamp) || Number.isNaN(candidateTimestamp)) {
-                return false;
-              }
-              return Math.abs(existingTimestamp - candidateTimestamp) <= DUPLICATE_WINDOW_MS;
-            };
-
-            if (next.some(isWithinWindow)) {
-              continue;
             }
           }
 
@@ -245,6 +250,12 @@ export default function UnloquiaChatWidget({
           if (!seenKeys.has(key)) {
             next.push(message);
             seenKeys.add(key);
+            if (message.sender === 'bot') {
+              const timestamp = Date.parse(message.createdAt);
+              if (!Number.isNaN(timestamp)) {
+                botRecent.set(message.text, timestamp);
+              }
+            }
           }
           const timestamp = Date.parse(message.createdAt);
           if (!Number.isNaN(timestamp) && timestamp > latestTimestamp) {
