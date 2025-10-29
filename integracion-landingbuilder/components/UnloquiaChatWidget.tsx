@@ -30,6 +30,8 @@ type UnloquiaChatWidgetProps = {
 };
 
 const USER_STORAGE_KEY = 'unloquia-chat-user-id';
+const CACHE_STORAGE_PREFIX = 'unloquia-chat-cache';
+const MAX_CACHED_MESSAGES = 100;
 const POLL_INTERVAL_MS = 2000;
 
 const toDisplayText = (value: unknown): string => {
@@ -159,6 +161,7 @@ export default function UnloquiaChatWidget({
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
   const lastTimestampRef = useRef<string | null>(null);
   const hydratedRef = useRef<boolean>(false);
+  const restoredFromCacheRef = useRef(false);
 
   useEffect(() => {
     if (!externalUserId) {
@@ -177,6 +180,83 @@ export default function UnloquiaChatWidget({
     () => externalUserId ?? storedUserId,
     [externalUserId, storedUserId],
   );
+
+  useEffect(() => {
+    if (!clientId || !userId || restoredFromCacheRef.current) {
+      return;
+    }
+
+    const cacheKey = `${CACHE_STORAGE_PREFIX}:${clientId}:${userId}`;
+    restoredFromCacheRef.current = true;
+
+    try {
+      const cachedValue = window.localStorage.getItem(cacheKey);
+      if (!cachedValue) {
+        return;
+      }
+
+      const parsed = JSON.parse(cachedValue);
+      if (!Array.isArray(parsed)) {
+        return;
+      }
+
+      const cachedMessages: Message[] = [];
+      for (const entry of parsed) {
+        if (
+          !entry ||
+          typeof entry !== 'object' ||
+          ((entry as any).sender !== 'user' && (entry as any).sender !== 'bot')
+        ) {
+          continue;
+        }
+
+        const text =
+          typeof (entry as any).text === 'string' ? (entry as any).text : '';
+        if (!text) {
+          continue;
+        }
+
+        const createdAt =
+          typeof (entry as any).createdAt === 'string'
+            ? (entry as any).createdAt
+            : new Date().toISOString();
+
+        const sender =
+          (entry as any).sender === 'bot' ? 'bot' : ('user' as const);
+
+        const cachedMessage: Message = {
+          id:
+            typeof (entry as any).id === 'string'
+              ? (entry as any).id
+              : `${sender}:${createdAt}:${text.slice(0, 32)}`,
+          messageId:
+            typeof (entry as any).messageId === 'string'
+              ? (entry as any).messageId
+              : undefined,
+          sender,
+          text,
+          createdAt,
+          pending: false,
+        };
+
+        cachedMessages.push(cachedMessage);
+      }
+
+      if (cachedMessages.length === 0) {
+        return;
+      }
+
+      cachedMessages.sort(sortMessages);
+      const lastMessage = cachedMessages[cachedMessages.length - 1];
+      if (lastMessage) {
+        lastTimestampRef.current = lastMessage.createdAt;
+      }
+      setMessages(cachedMessages);
+      hydratedRef.current = true;
+    } catch (error) {
+      console.warn('Failed to restore cached chat messages', error);
+    }
+  }, [clientId, userId]);
 
   const fetchMessages = useCallback(async () => {
     if (!clientId || !userId) {
@@ -244,6 +324,9 @@ export default function UnloquiaChatWidget({
         }
 
         next.sort(sortMessages);
+        if (next.length > MAX_CACHED_MESSAGES) {
+          next.splice(0, next.length - MAX_CACHED_MESSAGES);
+        }
         return next;
       });
 
@@ -373,6 +456,19 @@ export default function UnloquiaChatWidget({
     const combined = [...messages, ...pendingMessages];
     return combined.sort(sortMessages);
   }, [messages, pendingMessages]);
+
+  useEffect(() => {
+    if (!clientId || !userId) {
+      return;
+    }
+
+    const cacheKey = `${CACHE_STORAGE_PREFIX}:${clientId}:${userId}`;
+    try {
+      window.localStorage.setItem(cacheKey, JSON.stringify(messages));
+    } catch (error) {
+      console.warn('Failed to cache chat messages', error);
+    }
+  }, [messages, clientId, userId]);
 
   useEffect(() => {
     // Auto-scroll to the latest message when new ones arrive
