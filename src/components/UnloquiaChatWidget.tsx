@@ -33,6 +33,12 @@ type UnloquiaChatWidgetProps = {
 const MAX_PENDING_CACHE = 10;
 const POLL_INTERVAL_MS = 2000;
 const DUPLICATE_WINDOW_MS = 30_000;
+const normalizeForDedupe = (text: string): string =>
+  text
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const toDisplayText = (value: unknown): string => {
   if (value == null) {
     return "";
@@ -79,7 +85,7 @@ const normaliseRow = (row: any, index: number): Message | null => {
     (typeof row.content === "string" ? row.content : row.content?.text) ??
     row.payload?.text ??
     row.payload?.message;
-  const text = toDisplayText(rawText).trim();
+  const text = normalizeForDedupe(toDisplayText(rawText));
   if (!text) {
     return null;
   }
@@ -167,6 +173,7 @@ export default function UnloquiaChatWidget({
   const initialisedViewRef = useRef(false);
   const lastTimestampRef = useRef<string | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const fetchingRef = useRef(false);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
 
   useEffect(() => {
@@ -225,6 +232,10 @@ export default function UnloquiaChatWidget({
     }
 
     try {
+      if (fetchingRef.current) {
+        return;
+      }
+      fetchingRef.current = true;
       const params = new URLSearchParams({
         clientId,
         sessionId: userId,
@@ -274,7 +285,7 @@ export default function UnloquiaChatWidget({
           }
           const ts = Date.parse(existing.createdAt);
           if (!Number.isNaN(ts)) {
-            botRecent.set(existing.text, ts);
+            botRecent.set(normalizeForDedupe(existing.text), ts);
           }
         }
 
@@ -287,7 +298,7 @@ export default function UnloquiaChatWidget({
           if (message.sender === "bot") {
             const candidateTimestamp = Date.parse(message.createdAt);
             if (!Number.isNaN(candidateTimestamp)) {
-              const lastSeen = botRecent.get(message.text);
+              const lastSeen = botRecent.get(normalizeForDedupe(message.text));
               if (
                 lastSeen !== undefined &&
                 Math.abs(candidateTimestamp - lastSeen) <= DUPLICATE_WINDOW_MS
@@ -304,7 +315,7 @@ export default function UnloquiaChatWidget({
             if (message.sender === "bot") {
               const timestamp = Date.parse(message.createdAt);
               if (!Number.isNaN(timestamp)) {
-                botRecent.set(message.text, timestamp);
+                botRecent.set(normalizeForDedupe(message.text), timestamp);
               }
             }
           }
@@ -331,6 +342,8 @@ export default function UnloquiaChatWidget({
       }
     } catch (error) {
       console.error("Failed to fetch landing messages", error);
+    } finally {
+      fetchingRef.current = false;
     }
   }, [clientId, userId]);
 
