@@ -243,13 +243,15 @@ export default function UnloquiaChatWidget({
 
         for (const message of normalised) {
           if (message.sender === 'bot') {
+            const textKey = normalizeForDedupe(message.text);
             const candidateTimestamp = Date.parse(message.createdAt);
-            if (!Number.isNaN(candidateTimestamp)) {
-              const lastSeen = botRecent.get(normalizeForDedupe(message.text));
-              if (
-                lastSeen !== undefined &&
-                Math.abs(candidateTimestamp - lastSeen) <= DUPLICATE_WINDOW_MS
-              ) {
+            const lastSeen = botRecent.get(textKey);
+            if (lastSeen !== undefined) {
+              if (Number.isNaN(candidateTimestamp)) {
+                continue;
+              }
+
+              if (Math.abs(candidateTimestamp - lastSeen) <= DUPLICATE_WINDOW_MS) {
                 continue;
               }
             }
@@ -260,10 +262,9 @@ export default function UnloquiaChatWidget({
             next.push(message);
             seenKeys.add(key);
             if (message.sender === 'bot') {
+              const textKey = normalizeForDedupe(message.text);
               const timestamp = Date.parse(message.createdAt);
-              if (!Number.isNaN(timestamp)) {
-                botRecent.set(normalizeForDedupe(message.text), timestamp);
-              }
+              botRecent.set(textKey, Number.isNaN(timestamp) ? Date.now() : timestamp);
             }
           }
           const timestamp = Date.parse(message.createdAt);
