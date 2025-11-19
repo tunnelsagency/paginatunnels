@@ -3,7 +3,8 @@
     "allow": [
       "Bash(lsof:*)",
       "Bash(netstat:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

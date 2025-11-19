@@ -120,7 +120,7 @@ function Navbar() {
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 shadow-md">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 sm:px-6 py-2 sm:py-3">
-        <Link href="#" className="flex items-center gap-2 sm:gap-3 group">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
           <div className="relative">
             <Image
               src="/logo.png"
@@ -128,11 +128,11 @@ function Navbar() {
               width={56}
               height={56}
               priority
-              className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-xl bg-white p-1 object-contain transition-transform group-hover:scale-110"
+              className="h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 rounded-xl bg-white p-1 object-contain transition-transform group-hover:scale-110"
             />
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary to-accent opacity-0 blur-xl transition-opacity group-hover:opacity-50" />
           </div>
-          <div className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <div className="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Tunnels Services
           </div>
         </Link>
