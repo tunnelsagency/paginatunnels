@@ -584,3 +584,7 @@ export default function UnloquiaChatWidget({
     height: panelHeight,
     maxHeight: 'calc(100vh - 4rem)',
     borderRadius: isMobileView ? '1.75rem' : '1.5rem',
+  };
+
+  return null; // Component not fully implemented
+}
