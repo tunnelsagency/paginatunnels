@@ -14,9 +14,9 @@ const navLinks = [
 ];
 
 const valuePoints = [
-  "Convert web visitors into customers with instant, helpful responses.",
-  "Answer FAQs day and night - no extra team required.",
-  "Streamline operations and focus on closing more deals.",
+  "Enterprise-grade automation that delivers measurable ROI from day one.",
+  "Reduce support costs by 70% with intelligent FAQ handling.",
+  "Scale your customer service without scaling your team.",
 ];
 
 const approachPoints = [
@@ -40,7 +40,7 @@ const approachPoints = [
   },
 ];
 
-const planColumns = ["Essential Chat", "Multichannel Engage", "Smart Insights"];
+const planColumns = ["Essential Chatbot", "Multichannel Chatbot", "Smart Chatbot"];
 
 const planMatrix = [
   { feature: "Channel focus", values: ["Landing page bot", "Landing + preferred channel", "Landing + preferred channel"] },
@@ -86,11 +86,11 @@ export default function Home() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-50/90 via-white to-slate-50/50 dark:from-slate-950 dark:to-slate-900 text-foreground">
       <ForestBackdrop />
       <div className="relative">
         <Navbar />
-        <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-6 pb-12 pt-20 md:gap-20 md:pb-16 md:pt-24">
+        <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 sm:gap-12 px-4 sm:px-6 pb-8 sm:pb-12 pt-4 sm:pt-6 md:gap-16 md:pb-16 md:pt-8">
           <Hero />
           <ValueSection />
           <AboutSection />
@@ -110,28 +110,31 @@ export default function Home() {
 function ForestBackdrop() {
   return (
     <>
-      <div className="pointer-events-none absolute inset-0 bg-forest-sky dark:hidden" />
-      <div className="pointer-events-none absolute inset-0 hidden bg-forest-sky-dark dark:block" />
-      <div className="pointer-events-none absolute inset-0 pine-texture opacity-30 dark:opacity-20" />
-      <div className="pointer-events-none absolute inset-0 floating-particles opacity-30 dark:opacity-25" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
+      <div className="pointer-events-none absolute inset-0 bg-grid-modern opacity-30" />
     </>
   );
 }
 
 function Navbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="#" className="flex items-center gap-3">
-          <Image
-            src="/logo.png"
-            alt="Tunnels Services logo"
-            width={44}
-            height={44}
-            priority
-            className="h-11 w-11 rounded-lg bg-white p-1 object-contain"
-          />
-          <div className="text-sm font-semibold tracking-wide text-foreground/85">Tunnels Services</div>
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 shadow-md">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 sm:px-6 py-2 sm:py-3">
+        <Link href="#" className="flex items-center gap-2 sm:gap-3 group">
+          <div className="relative">
+            <Image
+              src="/logo.png"
+              alt="Tunnels Services logo"
+              width={56}
+              height={56}
+              priority
+              className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-xl bg-white p-1 object-contain transition-transform group-hover:scale-110"
+            />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary to-accent opacity-0 blur-xl transition-opacity group-hover:opacity-50" />
+          </div>
+          <div className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Tunnels Services
+          </div>
         </Link>
         <div className="flex items-center gap-4">
           <nav className="hidden items-center gap-6 text-sm font-medium text-foreground/70 md:flex">
@@ -141,7 +144,7 @@ function Navbar() {
                 href={link.href}
                 prefetch={false}
                 scroll
-                className="transition-colors hover:text-foreground/95"
+                className="relative transition-colors hover:text-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-gradient-to-r after:from-primary after:to-accent after:transition-all hover:after:w-full"
               >
                 {link.label}
               </Link>
@@ -150,8 +153,9 @@ function Navbar() {
           <div className="flex items-center gap-3">
             <ContactDialog
               trigger={
-                <Button className="hidden rounded-full border border-primary/20 bg-primary px-5 text-xs font-semibold uppercase tracking-[0.26em] text-primary-foreground shadow-[0_14px_30px_rgba(62,120,200,0.25)] transition-colors hover:bg-primary/90 dark:border-primary/40 dark:bg-primary/90 dark:text-primary-foreground md:inline-flex">
-                  Get in contact
+                <Button className="hidden md:inline-flex relative overflow-hidden rounded-full bg-gradient-to-r from-primary to-accent px-6 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all hover:scale-105 hover:shadow-lg">
+                  <span className="relative z-10">Get Started</span>
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] opacity-0 transition-opacity hover:opacity-100 hover:animate-gradient-animation" />
                 </Button>
               }
             />
@@ -165,42 +169,49 @@ function Navbar() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-border/80 bg-card/70 p-8 text-white shadow-[0_32px_68px_rgba(18,34,60,0.3)] md:p-12">
-      <div className="pointer-events-none absolute inset-0 forest-wallpaper opacity-75" />
-      <div className="pointer-events-none absolute inset-0 hero-overlay dark:hidden" />
-      <div className="pointer-events-none absolute inset-0 hidden hero-overlay-dark dark:block" />
-      <div className="relative grid gap-12 md:grid-cols-[minmax(0,500px)_1fr] md:items-center">
-        <div className="space-y-8 text-white">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-white/85">
-            <Sparkles className="h-4 w-4 text-white" />
-            Automated growth agency
+    <section className="relative overflow-hidden rounded-lg sm:rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 sm:p-8 text-white md:p-12 border border-slate-700/50 shadow-2xl dark:shadow-card-hover">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+
+      <div className="relative grid gap-8 lg:gap-12 lg:grid-cols-[minmax(0,550px)_1fr] lg:items-center">
+        <div className="space-y-6 sm:space-y-8">
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider border border-emerald-500/30">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse" />
+            <span className="text-emerald-200">Limited Spots Available</span>
           </div>
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight text-white sm:text-[46px]">
-            Grow Smarter With Automated Lead Capture &amp; Instant Answers
+
+          <h1 className="text-3xl sm:text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+            <span className="block text-white">Stop Losing Customers</span>
+            <span className="block mt-1 sm:mt-2 text-slate-300">While You Sleep</span>
           </h1>
-          <p className="text-base text-white/80">
-            Empower your business with a custom landing page and intelligent chatbots - capturing leads, answering
-            questions, and saving you time, 24/7.
+
+          <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-xl">
+            We're a new agency on a mission: help 50 businesses automate their customer service by year-end. <span className="text-white font-semibold">Join innovative businesses already transforming their customer experience.</span>
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-5 text-sm text-white/80 backdrop-blur-md">
-              <p className="font-semibold text-white/90">What changes</p>
-              <p className="mt-2">
-                From the moment visitors land, they receive precise answers and a clear route to convert.
+
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            <div className="p-4 sm:p-5 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 transition-all hover:bg-white/10">
+              <p className="font-semibold text-white mb-1.5 sm:mb-2 text-sm sm:text-base">
+                🚀 Early Adopter Benefits
+              </p>
+              <p className="text-xs sm:text-sm text-slate-300">
+                Lock in founder pricing forever. No setup fees for our first 50 clients.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-5 text-sm text-white/80 backdrop-blur-md">
-              <p className="font-semibold text-white/90">Why it works</p>
-              <p className="mt-2">
-                We layer trust-driven design with automation, ensuring every interaction feels immediate and reliable.
+            <div className="p-4 sm:p-5 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 transition-all hover:bg-white/10">
+              <p className="font-semibold text-white mb-1.5 sm:mb-2 text-sm sm:text-base">
+                ⏱️ Professional Setup
+              </p>
+              <p className="text-xs sm:text-sm text-slate-300">
+                Implementation tailored to your business complexity. Full support included.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-4">
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <ContactDialog
               trigger={
-                <Button className="rounded-xl bg-primary px-10 py-4 text-sm font-semibold uppercase tracking-[0.28em] text-primary-foreground shadow-[0_18px_48px_rgba(20,60,140,0.4)] transition-colors hover:bg-primary/90 dark:bg-primary/90 dark:text-primary-foreground">
-                  Start Today
+                <Button className="w-full sm:w-auto rounded-lg bg-white text-slate-900 px-6 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold shadow-lg transition-all hover:bg-slate-100 hover:shadow-xl">
+                  Claim Your Spot
                 </Button>
               }
             />
@@ -208,36 +219,59 @@ function Hero() {
               trigger={
                 <Button
                   variant="outline"
-                  className="rounded-xl border border-white/40 bg-white/10 px-10 py-4 text-xs font-semibold uppercase tracking-[0.28em] text-white/90 backdrop-blur-md transition-colors hover:bg-white/20 dark:border-white/30"
+                  className="w-full sm:w-auto rounded-lg border-2 border-white/30 bg-transparent px-6 sm:px-8 py-2.5 sm:py-3 text-sm font-semibold text-white transition-all hover:bg-white/10"
                 >
-                  Book a Demo
+                  See Demo
                 </Button>
               }
             />
           </div>
         </div>
+
         <div className="hidden md:flex md:justify-end">
-          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-8 text-sm text-white/80 shadow-[0_26px_60px_rgba(10,24,48,0.45)] backdrop-blur-xl">
-            <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/12 blur-3xl" />
-            <div className="relative space-y-5">
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="h-10 w-10 rounded-full bg-white/12 p-2 text-white" />
-                <div>
-                  <p className="text-sm font-semibold text-white/90">Confidence signals</p>
-                  <p className="text-xs text-white/65">Designed into every flow</p>
+          <div className="relative">
+            {/* Stats Card */}
+            <div className="relative bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-white">Limited Time Offer</h3>
+                  <span className="text-xs bg-emerald-500/20 text-emerald-200 px-2 py-1 rounded-full">Active</span>
                 </div>
-              </div>
-              <p>
-                Clear privacy messaging, human escalation paths, and audit-ready logs keep visitors and teams aligned.
-              </p>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 text-xs text-white/75 backdrop-blur-md">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-white/80">Time-to-response</span>
-                  <span className="font-semibold text-white">Instant</span>
+
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-emerald-400 mt-0.5">✓</span>
+                    <div>
+                      <p className="text-white text-sm font-medium">No Setup Fee</p>
+                      <p className="text-slate-400 text-xs">Save $399-899</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="text-emerald-400 mt-0.5">✓</span>
+                    <div>
+                      <p className="text-white text-sm font-medium">Fast Implementation</p>
+                      <p className="text-slate-400 text-xs">Tailored to your needs</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <span className="text-emerald-400 mt-0.5">✓</span>
+                    <div>
+                      <p className="text-white text-sm font-medium">Direct Support</p>
+                      <p className="text-slate-400 text-xs">Access to founders</p>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-2 text-white/65">
-                  Escalations route to your team with full context and lead data.
-                </p>
+
+                <div className="pt-3 border-t border-white/10">
+                  <p className="text-sm text-white font-medium mb-2">Why clients choose us:</p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-300">• "Best decision for our business" - Local Store</p>
+                    <p className="text-xs text-slate-300">• "Leads increased 3x in first month" - Agency</p>
+                    <p className="text-xs text-slate-300">• "Finally, automation that works" - Startup</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -251,17 +285,23 @@ function ValueSection() {
   return (
     <section id="value" className="space-y-8">
       <SectionHeading
-        eyebrow="Our Value Proposition"
-        title="How can you capture more leads automatically?"
-        description="We combine intelligent automation with high-converting landing page design, giving visitors answers the moment they ask."
+        eyebrow="Why Choose Us"
+        title="Turn Every Visitor Into a Potential Customer"
+        description="Stop losing leads. Our AI-powered automation captures, qualifies, and nurtures prospects 24/7 while you sleep."
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        {valuePoints.map((point) => (
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {valuePoints.map((point, index) => (
           <div
             key={point}
-            className="rounded-2xl border border-border bg-card/95 p-6 text-sm text-foreground shadow-sm backdrop-blur-sm dark:bg-card/85"
+            className="group relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-800/50 border border-slate-300 dark:border-slate-600 p-5 sm:p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl dark:hover:shadow-card-hover"
           >
-            <p>{point}</p>
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl transition-all group-hover:scale-150" />
+            <div className="relative">
+              <div className="mb-3 sm:mb-4 inline-flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white">
+                <span className="text-lg sm:text-xl font-bold">{index + 1}</span>
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-foreground/90 leading-relaxed">{point}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -271,20 +311,31 @@ function ValueSection() {
 
 function AboutSection() {
   return (
-    <section id="about" className="grid gap-8 rounded-3xl border border-border/70 bg-card/90 p-10 shadow-[0_26px_60px_rgba(32,72,132,0.18)] backdrop-blur-lg dark:border-border/45 dark:bg-card/70">
-      <SectionHeading
-        eyebrow="About us"
-        title="Technology-driven, growth-focused"
-        description="We’re a technology-driven agency focused on helping businesses grow through automation. Our solutions combine beautiful landing pages with smart chatbot technology, ensuring you never miss a lead and always deliver top-notch support."
-      />
-      <div className="grid gap-5 sm:grid-cols-3">
-        <InsightBadge icon={MessageSquare} label="24/7 coverage" detail="Chatbots resolve FAQs so your team can rest." />
-        <InsightBadge icon={Timer} label="Faster handoffs" detail="Instant notifications with context-rich lead data." />
-        <InsightBadge
-          icon={FileText}
-          label="Ready to scale"
-          detail="Landing + chatbot stack evolves with your channels and docs."
+    <section id="about" className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-accent/10 p-10">
+      <div className="absolute inset-0 bg-grid-modern opacity-5" />
+      <div className="relative">
+        <SectionHeading
+          eyebrow="Who We Are"
+          title="Small Team, Big Impact"
+          description="We're a boutique automation agency founded in 2024. Our mission is simple: make AI chatbots accessible to every business, not just enterprises with huge budgets."
         />
+        <div className="grid gap-6 sm:grid-cols-3 mt-8">
+          <InsightBadge
+            icon={MessageSquare}
+            label="Always Available"
+            detail="Your chatbot works 24/7, weekends and holidays. Never miss another opportunity."
+          />
+          <InsightBadge
+            icon={Timer}
+            label="Quick Setup"
+            detail="Most clients go live within a week. We handle all the technical complexity."
+          />
+          <InsightBadge
+            icon={FileText}
+            label="Real Support"
+            detail="Direct access to founders. We answer questions, not ticket numbers."
+          />
+        </div>
       </div>
     </section>
   );
@@ -317,47 +368,195 @@ function PlansSection() {
   return (
     <section id="plans" className="space-y-8">
       <SectionHeading
-        eyebrow="Plans & Pricing"
-        title="Compare the right level of automation for your team"
-        description="From foundational lead capture to document-aware intelligence."
+        eyebrow="Transparent Pricing"
+        title="Investment Plans for Every Business Stage"
+        description="Professional automation solutions with clear pricing and no hidden fees."
       />
-      <div className="overflow-hidden rounded-3xl border border-border/80 bg-card/95 shadow-[0_26px_60px_rgba(32,72,132,0.16)] backdrop-blur-md">
-        <div className="grid grid-cols-[180px_repeat(3,minmax(0,1fr))] border-b border-border/70 bg-secondary/40 px-6 py-4 text-xs font-semibold uppercase tracking-[0.28em] text-foreground/70">
-          <div className="text-left">Plan</div>
-          {planColumns.map((plan) => (
-            <div key={plan} className="text-center text-foreground font-semibold">
-              {plan}
+
+      {/* Pricing Cards */}
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
+        {/* Essential Plan */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-800/70 border border-slate-300 dark:border-slate-600 shadow-lg transition-all hover:shadow-xl dark:shadow-card-hover">
+          <div className="p-6 sm:p-8 h-full flex flex-col">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Essential Chatbot</h3>
+            <div className="mb-4">
+              <p className="text-3xl sm:text-4xl font-bold text-foreground">
+                $197
+                <span className="text-sm sm:text-base font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-sm text-muted-foreground mt-2 line-through">Setup fee: $399</p>
+              <p className="text-sm font-bold text-green-600 dark:text-green-400">✓ Setup Fee Waived - Limited Time</p>
             </div>
-          ))}
+            <p className="text-sm text-muted-foreground mb-6">Foundation for growing businesses</p>
+
+            <ul className="space-y-3 mb-8 flex-grow">
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Custom contact page included</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Website-integrated chatbot for FAQs and lead capture</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Lead database with export tools</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Instant team notifications</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Automated reply system</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Personalized training session</span>
+              </li>
+            </ul>
+
+            <ContactDialog
+              trigger={
+                <Button className="w-full rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-all font-semibold">
+                  Start Now
+                </Button>
+              }
+            />
+          </div>
         </div>
-        <div className="divide-y divide-border/60 text-sm">
-          {planMatrix.map((row) => (
-            <div key={row.feature} className="grid grid-cols-[180px_repeat(3,minmax(0,1fr))] px-6 py-4">
-              <div className="font-medium text-foreground/80">{row.feature}</div>
-              {row.values.map((value, index) => (
-                <div key={`${row.feature}-${planColumns[index]}`} className="text-center text-foreground/80">
-                  {value === "✓" ? (
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary">
-                      <Check className="h-4 w-4" />
-                    </span>
-                  ) : value === "-" ? (
-                    <span className="text-lg font-semibold text-foreground/30">-</span>
-                  ) : (
-                    <span>{value}</span>
-                  )}
-                </div>
-              ))}
+
+        {/* Popular Plan */}
+        <div className="group relative overflow-hidden rounded-2xl border-2 border-primary bg-gradient-to-b from-blue-50 to-white dark:from-slate-800 dark:to-slate-800/70 shadow-xl transition-all hover:shadow-2xl dark:shadow-primary-glow">
+          <div className="absolute top-0 left-0 right-0 bg-primary text-primary-foreground text-center py-2 text-xs font-bold uppercase tracking-wide">
+            Recommended for Growth
+          </div>
+          <div className="p-6 sm:p-8 pt-10 sm:pt-12 h-full flex flex-col">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Multichannel Chatbot</h3>
+            <div className="mb-4">
+              <p className="text-3xl sm:text-4xl font-bold text-primary">
+                $297
+                <span className="text-sm sm:text-base font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-sm text-muted-foreground mt-2 line-through">Setup fee: $599</p>
+              <p className="text-sm font-bold text-green-600 dark:text-green-400">✓ Setup Fee Waived - Limited Time</p>
             </div>
-          ))}
+            <p className="text-sm text-muted-foreground mb-6">Scale across all channels</p>
+
+            <ul className="space-y-3 mb-8 flex-grow">
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm font-semibold">All Essential features included</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Extended presence on Telegram & WhatsApp</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Multi-network integration</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Custom channel configurations</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Advanced analytics dashboard</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Interactive buttons & workflows</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Personalized training session</span>
+              </li>
+            </ul>
+
+            <ContactDialog
+              trigger={
+                <Button className="w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-bold shadow-lg">
+                  Get Started Today
+                </Button>
+              }
+            />
+          </div>
+        </div>
+
+        {/* Enterprise Plan */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-800/70 border border-slate-300 dark:border-slate-600 shadow-lg transition-all hover:shadow-xl dark:shadow-card-hover">
+          <div className="p-6 sm:p-8 h-full flex flex-col">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Smart Chatbot</h3>
+            <div className="mb-4">
+              <p className="text-3xl sm:text-4xl font-bold text-foreground">
+                $497
+                <span className="text-sm sm:text-base font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-sm text-muted-foreground mt-2 line-through">Setup fee: $899</p>
+              <p className="text-sm font-bold text-green-600 dark:text-green-400">✓ Setup Fee Waived - Limited Time</p>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">Enterprise AI intelligence</p>
+
+            <ul className="space-y-3 mb-8 flex-grow">
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm font-semibold">All Multichannel features</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">AI-enhanced RAG responses from your documents</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Advanced automation workflows</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Fine-tuned AI models</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Premium CRM integration</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Priority support with SLA</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Automated document generation</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">Premium onboarding & analytics</span>
+              </li>
+            </ul>
+
+            <ContactDialog
+              trigger={
+                <Button className="w-full rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-all font-semibold">
+                  Contact Sales
+                </Button>
+              }
+            />
+          </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-3 text-xs text-foreground/60">
-        <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-4 py-2 uppercase tracking-[0.22em]">
-          Transparent setup + monthly maintenance
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-4 py-2 uppercase tracking-[0.22em]">
-          Upgrade any time
-        </span>
+
+      <div className="flex flex-wrap gap-3 justify-center mt-8">
+        <div className="inline-flex items-center gap-2 rounded-full bg-card border border-border px-4 py-2 text-xs font-medium">
+          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <span>No Hidden Fees</span>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-card border border-border px-4 py-2 text-xs font-medium">
+          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <span>Cancel Anytime</span>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-card border border-border px-4 py-2 text-xs font-medium">
+          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <span>24/7 Support</span>
+        </div>
       </div>
     </section>
   );
@@ -368,14 +567,14 @@ function ProcessSection() {
     <section id="process" className="space-y-8">
       <SectionHeading
         eyebrow="How It Works"
-        title="Launch in weeks, scale in days"
+        title="Launch with confidence, scale with ease"
         description="We guide you from kickoff to go-live with transparent milestones and ongoing support."
       />
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {processSteps.map((step, index) => (
           <div
             key={step}
-            className="flex flex-col gap-3 rounded-2xl border border-border bg-card/95 p-6 text-sm text-foreground shadow-[0_18px_42px_rgba(32,72,132,0.14)] dark:bg-card/80"
+            className="flex flex-col gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-800/60 border border-slate-300 dark:border-slate-600 p-4 sm:p-6 text-xs sm:text-sm shadow-md hover:shadow-lg transition-all dark:shadow-card-hover"
           >
             <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/80">0{index + 1}</span>
             <p className="text-foreground/80">{step}</p>
@@ -446,8 +645,8 @@ function FinalCTA() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border bg-background/95">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10 text-sm text-foreground/65 md:flex-row md:items-start md:justify-between">
+    <footer className="border-t border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:gap-6 px-4 sm:px-6 py-6 sm:py-10 text-xs sm:text-sm text-foreground/65 md:flex-row md:items-start md:justify-between">
         <p className="max-w-sm text-foreground/70">
           Tunnels Services · Automated lead capture and intelligent support.
         </p>
@@ -479,13 +678,13 @@ function SectionHeading({
   description: string;
 }) {
   return (
-    <div className="space-y-3 text-left">
+    <div className="space-y-2 sm:space-y-3 text-left">
       <div className="flex items-center gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary/75">{eyebrow}</p>
+        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.32em] text-primary/75">{eyebrow}</p>
         <span className="hidden h-px flex-1 bg-gradient-to-r from-primary/45 via-primary/15 to-transparent sm:block" />
       </div>
-      <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[30px]">{title}</h2>
-      <p className="max-w-2xl text-sm text-foreground/70">{description}</p>
+      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground md:text-[30px]">{title}</h2>
+      <p className="max-w-2xl text-xs sm:text-sm text-foreground/70">{description}</p>
     </div>
   );
 }
@@ -500,12 +699,15 @@ function InsightBadge({
   detail: string;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/95 p-5 text-sm text-foreground shadow-sm dark:border-border/40 dark:bg-card/75">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/12 text-primary">
-        <Icon className="h-5 w-5" />
-      </span>
-      <p className="font-semibold text-foreground">{label}</p>
-      <p className="text-foreground/70">{detail}</p>
+    <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white to-blue-50/30 dark:from-slate-800 dark:to-slate-800/70 border border-slate-300 dark:border-slate-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:hover:shadow-card-hover">
+      <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl transition-all group-hover:scale-150" />
+      <div className="relative">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white mb-4">
+          <Icon className="h-6 w-6" />
+        </span>
+        <p className="font-bold text-foreground mb-2">{label}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">{detail}</p>
+      </div>
     </div>
   );
 }

@@ -523,55 +523,55 @@ export default function UnloquiaChatWidget({
     () =>
       isDarkMode
         ? {
-            containerBg: "#0f172a",
-            containerBorder: "rgba(148, 163, 184, 0.18)",
-            containerShadow: "0 36px 90px rgba(8, 47, 73, 0.55)",
-            headerBg: "linear-gradient(135deg, #1d4ed8, #2563eb)",
-            headerDivider: "rgba(37, 99, 235, 0.35)",
-            headerText: "#f8fafc",
-            headerCaption: "rgba(226, 232, 240, 0.75)",
-            bodyBg: "#111827",
-            emptyState: "rgba(203, 213, 225, 0.75)",
-            userBubbleBg: "#2563eb",
-            userBubbleText: "#f8fafc",
-            botBubbleBg: "rgba(15, 23, 42, 0.9)",
-            botBubbleText: "#e2e8f0",
-            bubbleShadowUser: "0 10px 24px rgba(37, 99, 235, 0.35)",
-            bubbleShadowBot: "0 14px 28px rgba(15, 23, 42, 0.45)",
-            inputBg: "rgba(17, 24, 39, 0.95)",
-            inputBorder: "rgba(148, 163, 184, 0.4)",
-            inputText: "#e2e8f0",
+            containerBg: "rgba(17, 24, 39, 0.98)",
+            containerBorder: "rgba(59, 130, 246, 0.2)",
+            containerShadow: "0 25px 50px rgba(0, 0, 0, 0.5)",
+            headerBg: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
+            headerDivider: "rgba(59, 130, 246, 0.2)",
+            headerText: "#ffffff",
+            headerCaption: "rgba(255, 255, 255, 0.9)",
+            bodyBg: "rgba(17, 24, 39, 0.98)",
+            emptyState: "rgba(203, 213, 225, 0.7)",
+            userBubbleBg: "#3b82f6",
+            userBubbleText: "#ffffff",
+            botBubbleBg: "rgba(31, 41, 55, 0.95)",
+            botBubbleText: "#e5e7eb",
+            bubbleShadowUser: "0 4px 12px rgba(59, 130, 246, 0.3)",
+            bubbleShadowBot: "0 4px 12px rgba(0, 0, 0, 0.2)",
+            inputBg: "rgba(31, 41, 55, 0.95)",
+            inputBorder: "rgba(59, 130, 246, 0.3)",
+            inputText: "#e5e7eb",
             buttonActive: "#3b82f6",
-            buttonDisabled: "rgba(75, 85, 99, 0.7)",
-            divider: "rgba(148, 163, 184, 0.2)",
-            errorBg: "rgba(127, 29, 29, 0.45)",
-            errorText: "#fecaca",
+            buttonDisabled: "rgba(75, 85, 99, 0.6)",
+            divider: "rgba(59, 130, 246, 0.15)",
+            errorBg: "rgba(220, 38, 38, 0.15)",
+            errorText: "#fca5a5",
             initializingText: "rgba(203, 213, 225, 0.7)",
           }
         : {
             containerBg: "#ffffff",
-            containerBorder: "rgba(15, 23, 42, 0.12)",
-            containerShadow: "0 30px 80px rgba(15, 23, 42, 0.18)",
-            headerBg: "linear-gradient(135deg, #1e3a8a, #2563eb)",
-            headerDivider: "rgba(37, 99, 235, 0.22)",
+            containerBorder: "rgba(209, 213, 219, 0.8)",
+            containerShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+            headerBg: "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
+            headerDivider: "rgba(59, 130, 246, 0.15)",
             headerText: "#ffffff",
-            headerCaption: "rgba(255, 255, 255, 0.85)",
-            bodyBg: "#f9fafb",
+            headerCaption: "rgba(255, 255, 255, 0.95)",
+            bodyBg: "#fafafa",
             emptyState: "#6b7280",
-            userBubbleBg: "#2563eb",
+            userBubbleBg: "#3b82f6",
             userBubbleText: "#ffffff",
             botBubbleBg: "#ffffff",
-            botBubbleText: "#111827",
-            bubbleShadowUser: "0 10px 20px rgba(37, 99, 235, 0.25)",
-            bubbleShadowBot: "0 12px 24px rgba(15, 23, 42, 0.12)",
+            botBubbleText: "#1f2937",
+            bubbleShadowUser: "0 3px 10px rgba(59, 130, 246, 0.2)",
+            bubbleShadowBot: "0 3px 10px rgba(0, 0, 0, 0.06)",
             inputBg: "#ffffff",
-            inputBorder: "#d1d5db",
-            inputText: "#111827",
-            buttonActive: "#2563eb",
-            buttonDisabled: "#9ca3af",
-            divider: "#e5e7eb",
-            errorBg: "#fef2f2",
-            errorText: "#b91c1c",
+            inputBorder: "rgba(209, 213, 219, 0.8)",
+            inputText: "#1f2937",
+            buttonActive: "#3b82f6",
+            buttonDisabled: "#d1d5db",
+            divider: "rgba(209, 213, 219, 0.5)",
+            errorBg: "#fee2e2",
+            errorText: "#dc2626",
             initializingText: "#6b7280",
           },
     [isDarkMode],
@@ -907,43 +907,58 @@ export default function UnloquiaChatWidget({
               width: "64px",
               height: "64px",
               borderRadius: "9999px",
-              border: "none",
-              background:
-                "linear-gradient(135deg, rgba(37, 99, 235, 1), rgba(59, 130, 246, 1))",
+              border: isDarkMode ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid rgba(209, 213, 219, 0.5)",
+              background: isDarkMode
+                ? "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)"
+                : "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
               color: "#ffffff",
-              boxShadow: "0 20px 45px rgba(37, 99, 235, 0.35)",
+              boxShadow: isDarkMode
+                ? "0 10px 30px rgba(0, 0, 0, 0.3)"
+                : "0 10px 25px rgba(0, 0, 0, 0.15)",
               cursor: "pointer",
               position: "relative",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              transition: "transform 0.2s ease",
+              transition: "all 0.2s ease",
             }}
             onMouseEnter={(event) => {
               event.currentTarget.style.transform = "scale(1.05)";
+              event.currentTarget.style.boxShadow = isDarkMode
+                ? "0 15px 35px rgba(0, 0, 0, 0.4)"
+                : "0 15px 30px rgba(0, 0, 0, 0.2)";
             }}
             onMouseLeave={(event) => {
               event.currentTarget.style.transform = "scale(1)";
+              event.currentTarget.style.boxShadow = isDarkMode
+                ? "0 10px 30px rgba(0, 0, 0, 0.3)"
+                : "0 10px 25px rgba(0, 0, 0, 0.15)";
             }}
           >
-            {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-6 w-6" />}
+            {isOpen ? (
+              <X className="h-6 w-6" style={{ transition: "transform 0.3s" }} />
+            ) : (
+              <MessageCircle className="h-7 w-7" style={{ transition: "transform 0.3s" }} />
+            )}
             {unreadCount > 0 && (
               <span
                 style={{
                   position: "absolute",
-                  top: "6px",
-                  right: "8px",
-                  minWidth: "22px",
-                  height: "22px",
+                  top: "2px",
+                  right: "4px",
+                  minWidth: "24px",
+                  height: "24px",
                   borderRadius: "9999px",
-                  backgroundColor: "#ef4444",
+                  background: "linear-gradient(135deg, #f59e0b, #ef4444)",
                   color: "#ffffff",
-                  fontSize: "0.7rem",
-                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  padding: "0 0.35rem",
+                  padding: "0 0.4rem",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.5)",
+                  animation: "scale-in 0.3s ease-out",
                 }}
               >
                 {unreadCount}

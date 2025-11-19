@@ -1,0 +1,223 @@
+/* Container baseline */
+#unloquia-chat-root {
+  position: fixed;
+  inset: auto 1.5rem 1rem auto;
+  z-index: 999;
+  pointer-events: none;
+}
+
+.unloquia-chat-floating,
+.unloquia-chat-panel {
+  pointer-events: auto;
+}
+
+.unloquia-chat-floating {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 18px 46px rgba(37, 99, 235, 0.35);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.unloquia-chat-floating:hover {
+  transform: translateY(-2px);
+}
+
+.unloquia-chat-panel {
+  position: fixed;
+  bottom: 1rem;
+  right: 1.5rem;
+  width: min(400px, calc(100vw - 3rem));
+  height: min(640px, calc(100vh - 4rem));
+  max-height: calc(100vh - 4rem);
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px) scale(0.95);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.unloquia-chat-panel.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.unloquia-chat-header {
+  padding: 1.1rem 1.5rem 1rem;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #fff;
+  position: relative;
+}
+
+.unloquia-chat-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.unloquia-chat-header p {
+  margin: 0.35rem 0 0;
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
+.unloquia-chat-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unloquia-chat-messages {
+  flex: 1;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  background: #f9fafb;
+}
+
+.unloquia-chat-bubble {
+  max-width: 85%;
+  border-radius: 20px;
+  padding: 0.85rem 1rem;
+  line-height: 1.4;
+  font-size: 0.95rem;
+  word-break: break-word;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+}
+
+.unloquia-chat-bubble.user {
+  align-self: flex-end;
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+  border-radius: 18px 18px 4px 18px;
+}
+
+.unloquia-chat-bubble.bot {
+  align-self: flex-start;
+  background: #fff;
+  color: #111827;
+  border-radius: 18px 18px 18px 4px;
+}
+
+.unloquia-chat-sending {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.unloquia-chat-suggestions {
+  padding: 0.75rem 1.5rem 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: #ffffff;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.unloquia-chat-suggestions button {
+  border: none;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.unloquia-chat-suggestions button:hover,
+.unloquia-chat-suggestions button:focus {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.unloquia-chat-input {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 1rem;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.unloquia-chat-input input {
+  flex: 1;
+  border-radius: 14px;
+  border: 1px solid #d1d5db;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+}
+
+.unloquia-chat-input button {
+  border-radius: 14px;
+  border: none;
+  padding: 0 1.1rem;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: background-color 0.2s ease;
+}
+
+.unloquia-chat-input button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.unloquia-chat-unread {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  #unloquia-chat-root {
+    inset: auto 50% 1rem 50%;
+    transform: translateX(50%);
+  }
+
+  .unloquia-chat-panel {
+    bottom: 0.75rem;
+    right: 50%;
+    transform: translate(50%, 16px) scale(0.95);
+    width: min(100vw - 1.75rem, 360px);
+    height: min(75vh, 560px);
+  }
+}

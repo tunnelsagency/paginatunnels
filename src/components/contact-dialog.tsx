@@ -33,6 +33,12 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
     }
   }, [open]);
 
+  const validateEmail = (email: string): boolean => {
+    // RFC 5322 compliant email validation
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = formRef.current; // Use the ref, event.currentTarget can be nulled after awaits.
@@ -47,6 +53,26 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
     const company = (formData.get("company") as string | null)?.trim() ?? "";
     const message = (formData.get("message") as string | null)?.trim() ?? "";
 
+    // Validate email before sending
+    if (!email) {
+      setErrorMessage("Please enter your email address.");
+      setStatus("error");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setErrorMessage("Please enter a valid email address (e.g., name@example.com).");
+      setStatus("error");
+      return;
+    }
+
+    // Validate name
+    if (!name) {
+      setErrorMessage("Please enter your name.");
+      setStatus("error");
+      return;
+    }
+
     setStatus("sending");
     setErrorMessage(null);
 
@@ -60,8 +86,9 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
       });
 
       if (!response.ok) {
-        const { error } = (await response.json()) as { error?: string };
-        throw new Error(error ?? "Unknown error");
+        const errorData = (await response.json()) as { error?: string; details?: string };
+        console.error("Email API error response:", errorData);
+        throw new Error(errorData.details || errorData.error || "Unknown error");
       }
 
       if (form) {
@@ -73,8 +100,9 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
         setOpen(false);
       }, 1400);
     } catch (error) {
-      console.error("Failed to send contact form", error);
-      setErrorMessage("We couldn't send your message. Please try again in a moment.");
+      console.error("Failed to send contact form:", error);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      setErrorMessage(`We couldn't send your message: ${errorMsg}. Please try again in a moment.`);
       setStatus("error");
     }
   };
@@ -88,17 +116,17 @@ export function ContactDialog({ trigger }: ContactDialogProps) {
             Book a personalized demo
           </DialogTitle>
           <DialogDescription className="text-sm text-foreground/70">
-            Share a few details and we&apos;ll reach out from tunnels.services@gmail.com to schedule your session.
+            Share a few details and we&apos;ll reach out from tunnels.agency@gmail.com to schedule your session.
           </DialogDescription>
         </DialogHeader>
         <form ref={formRef} className="mt-4 space-y-5 text-left" onSubmit={handleSubmit}>
           <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" placeholder="Your name" />
+            <Label htmlFor="name">Name *</Label>
+            <Input id="name" name="name" placeholder="Your name" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="you@email.com" required />
+            <Label htmlFor="email">Email *</Label>
+            <Input id="email" name="email" type="email" placeholder="you@example.com" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="company">Company</Label>

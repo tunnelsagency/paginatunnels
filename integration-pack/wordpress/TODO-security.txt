@@ -1,0 +1,38 @@
+This plugin is functional, but hardening is recommended before production use.
+
+1. REST permission callbacks
+   • Replace __return_true with a function that verifies a custom nonce
+     (wp_create_nonce('unloquia_chat')) and checks Origin/Referer matches
+     the site domain.
+   • Optionally confirm clientId matches the stored option to prevent cross-site use.
+
+2. Nonce wiring
+   • Enqueue: pass nonce via wp_localize_script('unloquia-chat-widget', ...).
+   • JS: include the nonce in headers for both fetch() calls.
+   • REST: reject requests with missing/invalid nonce (403).
+
+3. Rate limiting
+   • Use transients per IP/sessionId (e.g. 20 requests / minute on /proxy, 60 on /messages).
+   • Return 429 and a friendly error when exceeded.
+
+4. HTTP API hardening
+   • Swap wp_remote_get/post → wp_safe_remote_get/post to guard against SSRF.
+
+5. Input validation
+   • Enforce UUID format for clientId/messageId.
+   • Cap text length (e.g. 2000 chars).
+
+6. WordPress polish
+   • register_setting(..., ['sanitize_callback' => ...]).
+   • Add Text Domain / Domain Path headers + load_plugin_textdomain().
+   • Create uninstall.php deleting unloquia_chat_settings.
+
+7. Optional client auth
+   • Issue per-client tokens stored in plugin settings and required by the JS widget.
+   • Example: plugin outputs X-Unloquia-Token header; REST validates token before proxying.
+   • Combine with whitelist of clientIds to restrict usage.
+
+8. Documentation
+   • Update README with prerequisites, hardening steps, uninstall behaviour, and auth notes.
+
+Apply these changes before distributing the plugin publicly or deploying in untrusted environments.
