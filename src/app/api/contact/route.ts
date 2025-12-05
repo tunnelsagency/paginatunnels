@@ -38,9 +38,14 @@ export async function POST(request: Request) {
     console.log("[contact] Using API key starting with:", apiKey.substring(0, 10) + "...");
 
     const resend = new Resend(apiKey);
-    const fromAddress = process.env.RESEND_FROM_ADDRESS ?? DEFAULT_FROM;
+    // Don't use RESEND_FROM_ADDRESS if it's malformed
+    const envFromAddress = process.env.RESEND_FROM_ADDRESS;
+    const fromAddress = (envFromAddress && envFromAddress.includes('@') && !envFromAddress.includes('('))
+      ? envFromAddress
+      : DEFAULT_FROM;
 
     console.log("[contact] Sending email from:", fromAddress, "to:", RECIPIENT);
+    console.log("[contact] ENV from address was:", envFromAddress);
 
     const lines = [
       `Name: ${name || "Not provided"}`,
@@ -64,7 +69,12 @@ export async function POST(request: Request) {
 
     console.log("[contact] Email sent successfully, result:", result);
 
-    return NextResponse.json({ ok: true, emailId: result.data?.id });
+    // Return more info for debugging in production
+    return NextResponse.json({
+      ok: true,
+      emailId: result.data?.id,
+      debug: process.env.NODE_ENV === 'development' ? result : undefined
+    });
   } catch (error) {
     console.error("[contact] Failed to send email, full error:", error);
     // Return more detailed error information for debugging
