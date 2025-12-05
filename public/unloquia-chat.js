@@ -191,7 +191,7 @@
             }\
             .unloquia-widget-close:hover {\
                 opacity: 1;\
-            }\
+                }\
             .unloquia-widget-messages {\
                 flex: 1;\
                 overflow-y: auto;\
@@ -268,6 +268,11 @@
                 outline: none;\
                 transition: border-color 0.2s;\
                 min-width: 0;\
+                color: #111827 !important;\
+                background: #ffffff !important;\
+            }\
+            .unloquia-widget-input input::placeholder {\
+                color: #9CA3AF !important;\
             }\
             .unloquia-widget-input input:focus {\
                 border-color: ' + primaryColor + ';\
@@ -309,6 +314,70 @@
                     bottom: 80px;\
                     border-radius: 12px;\
                 }\
+            }\
+            /* Dark Mode Support */\
+            @media (prefers-color-scheme: dark) {\
+                .unloquia-widget-container {\
+                    background: #1F2937;\
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.4);\
+                }\
+                .unloquia-widget-messages {\
+                    background: #111827;\
+                }\
+                .unloquia-message.unloquia-bot {\
+                    background: #374151;\
+                    color: #F3F4F6;\
+                    box-shadow: none;\
+                }\
+                .unloquia-message.unloquia-typing {\
+                    background: #374151;\
+                }\
+                .unloquia-widget-input {\
+                    background: #1F2937;\
+                    border-top-color: #374151;\
+                }\
+                .unloquia-widget-input input {\
+                    background: #374151 !important;\
+                    border-color: #4B5563;\
+                    color: #F3F4F6 !important;\
+                }\
+                .unloquia-widget-input input::placeholder {\
+                    color: #9CA3AF !important;\
+                }\
+                .unloquia-widget-input input:focus {\
+                    border-color: ' + primaryColor + ';\
+                }\
+            }\
+            /* Tailwind Dark Mode Class Support */\
+            body.dark .unloquia-widget-container {\
+                background: #1F2937;\
+                box-shadow: 0 8px 32px rgba(0,0,0,0.4);\
+            }\
+            body.dark .unloquia-widget-messages {\
+                background: #111827;\
+            }\
+            body.dark .unloquia-message.unloquia-bot {\
+                background: #374151;\
+                color: #F3F4F6;\
+                box-shadow: none;\
+            }\
+            body.dark .unloquia-message.unloquia-typing {\
+                background: #374151;\
+            }\
+            body.dark .unloquia-widget-input {\
+                background: #1F2937;\
+                border-top-color: #374151;\
+            }\
+            body.dark .unloquia-widget-input input {\
+                background: #374151 !important;\
+                border-color: #4B5563;\
+                color: #F3F4F6 !important;\
+            }\
+            body.dark .unloquia-widget-input input::placeholder {\
+                color: #9CA3AF !important;\
+            }\
+            body.dark .unloquia-widget-input input:focus {\
+                border-color: ' + primaryColor + ';\
             }\
         ';
     }
@@ -799,7 +868,7 @@
 
         // Mensaje de bienvenida
         var welcomeMsg = this.userConfig.welcomeMessage ||
-            'Hola! Soy el asistente de ' + botName + '. En que puedo ayudarte?';
+            'Inicia la conversación';
         this.messages.push({
             id: 'welcome',
             role: 'bot',

@@ -16,11 +16,11 @@ export default function UnloquiaChatWidget({ clientId }: UnloquiaChatWidgetProps
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).UNLOQUIA_CONFIG = { token: clientId };
 
-    // Cargar el script del widget
+    // Cargar el script del widget con cache busting
     const script = document.createElement('script');
-    script.src = '/unloquia-chat.js';
+    script.src = `/unloquia-chat.js?v=${Date.now()}`;
     script.async = true;
-    
+
     // Manejo de errores de carga
     script.onerror = () => {
       console.error('[UnloquiaChat] Failed to load widget script');
